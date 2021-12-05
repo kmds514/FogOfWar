@@ -23,7 +23,7 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION(Category = "Mouse", BlueprintPure)
+	UFUNCTION(Category = "Top Down", BlueprintPure)
 	EEdgeLocation GetMouseEdgeLocation() const;
 
 private:
