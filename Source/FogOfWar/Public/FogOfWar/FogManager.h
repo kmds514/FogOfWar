@@ -39,7 +39,7 @@ public:
 
 protected:
 	UPROPERTY(Category = "Fog Manager", EditAnywhere, BlueprintReadOnly)
-	class ATopDownGrid* FogVolume = nullptr;
+	class ATopDownGrid* TopDownGrid = nullptr;
 
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	TArray<UFogAgentComponent*> FogAgents;

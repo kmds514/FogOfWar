@@ -17,11 +17,11 @@ AFogManager::AFogManager()
 		ConstructorHelpers::FClassFinder<ATopDownGrid> GridBP;
 
 		FConstructorStatics()
-			: GridBP(TEXT("Blueprint'/Game/FogOfWar/BP_Grid.BP_Grid_C'"))
+			: GridBP(TEXT("Blueprint'/Game/TopDown/Blueprints/BP_TopDownGrid.BP_TopDownGrid_C'"))
 		{}
 	};
 	FConstructorStatics ConstructorStatics;
-	FogVolume = ConstructorStatics.GridBP.Class.GetDefaultObject();
+	TopDownGrid = ConstructorStatics.GridBP.Class.GetDefaultObject();
 }
 
 // Called when the game starts or when spawned
@@ -69,7 +69,7 @@ void AFogManager::RemoveFogAgent(UFogAgentComponent* const FogAgent)
 
 void AFogManager::UpdateFogAgents()
 {
-	if (FogVolume)
+	if (TopDownGrid)
 	{
 		for (auto FogAgent : FogAgents)
 		{
@@ -77,7 +77,7 @@ void AFogManager::UpdateFogAgents()
 			{
 				CircleCoords.Reset(CircleCoords.GetSlack());
 
-				const FIntPoint& Coords = FogVolume->WorldToGrid(FogAgent->GetFogAgentLocation());
+				const FIntPoint& Coords = TopDownGrid->WorldToGrid(FogAgent->GetFogAgentLocation());
 				DrawCircle(Coords, FogAgent->Sight);
 			}
 		}
@@ -142,7 +142,7 @@ void AFogManager::DrawDebugTile(const FLinearColor& Color, float Duration)
 {
 	for (const auto& Coords : CircleCoords)
 	{
-		FVector Location = FogVolume->GridToWorld(Coords);
-		UKismetSystemLibrary::DrawDebugPoint(GetWorld(), Location, FogVolume->GetTileExtent().X * 0.95f, Color, Duration);
+		FVector Location = TopDownGrid->GridToWorld(Coords);
+		UKismetSystemLibrary::DrawDebugPoint(GetWorld(), Location, TopDownGrid->GetTileExtent().X * 0.95f, Color, Duration);
 	}
 }

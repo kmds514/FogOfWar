@@ -37,6 +37,8 @@ public:
 protected:
 	UPROPERTY(Category = "Top Down Grid", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 4, ClampMax = 256, UIMin = 4, UIMax = 256))
 	int GridResolution = 128;
+
+	/** Bias value for counting in world origin */
 	int GridShift = 64;
 
 	UPROPERTY(Category = "Top Down Grid", BlueprintReadWrite)
