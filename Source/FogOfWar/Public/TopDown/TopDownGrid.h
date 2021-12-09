@@ -15,35 +15,52 @@ public:
 	// Sets default values for this actor's properties
 	ATopDownGrid();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	/**
+	 * Called when an instance of this class is placed (in editor) or spawned.
+	 * @param	Transform			The transform the actor was constructed at.
+	 */
+	virtual void OnConstruction(const FTransform& Transform) override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	UFUNCTION(Category = "Top Down Grid", BlueprintNativeEvent, BlueprintPure)
+public:
+	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
 	FIntPoint WorldToGrid(const FVector& WorldLocation);
-	virtual FIntPoint WorldToGrid_Implementation(const FVector& WorldLocation);
 
-	UFUNCTION(Category = "Top Down Grid", BlueprintNativeEvent, BlueprintPure)
+	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
 	FVector GridToWorld(const FIntPoint& GridCoords);
-	virtual FVector GridToWorld_Implementation(const FIntPoint& GridCoords);
 
 	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
 	FVector GetTileExtent() const;
 
 protected:
-	UPROPERTY(Category = "Top Down Grid", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 4, ClampMax = 256, UIMin = 4, UIMax = 256))
-	int GridResolution = 128;
-
-	/** Bias value for counting in world origin */
-	int GridShift = 64;
-
-	UPROPERTY(Category = "Top Down Grid", BlueprintReadWrite)
+	UPROPERTY(Category = "Top Down Grid", BlueprintReadOnly)
 	FTransform GridTransform;
 
-	UPROPERTY(Category = "Top Down Grid", BlueprintReadWrite)
+	UPROPERTY(Category = "Top Down Grid", BlueprintReadOnly)
 	FVector TileExtent;
+
+private:
+	void UpdateGridTransform();
+	void DrawDebugTile();
+
+	UPROPERTY(Category = "Config", EditAnywhere)
+	bool bDebugGrid = false;
+
+	UPROPERTY(Category = "Config", EditAnywhere, meta = (ClampMin = 4, ClampMax = 256, UIMin = 4, UIMax = 256))
+	int GridResolution = 32;
+
+	UPROPERTY(Category = "Config", EditAnywhere)
+	int GridVolumeScaleXY = 1024;
+
+	UPROPERTY(Category = "Config", EditAnywhere)
+	int GridVolumeScaleZ = 1024;
+
+	UPROPERTY(Category = "Top Down Grid", VisibleAnywhere)
+	class UBillboardComponent* Billboard = nullptr;
+
+	UPROPERTY(Category = "Top Down Grid", VisibleAnywhere)
+	class UBoxComponent* GridVolume = nullptr;
+
+	/** Bias value for counting in first quadrant */
+	UPROPERTY()
+	int GridShift = 16;
 };

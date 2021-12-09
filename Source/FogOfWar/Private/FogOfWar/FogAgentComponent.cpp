@@ -18,18 +18,21 @@ void UFogAgentComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
 	TArray<AActor*> OutActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFogManager::StaticClass(), OutActors);
 	if (OutActors.Num() == 1)
 	{
 		FogManager = Cast<AFogManager>(OutActors[0]);
+
+		FString Name;
+		GetName(Name);
+		UE_LOG(LogTemp, Log, TEXT("%s: Successfully get FogManager."), *Name);
 	}
 	else
 	{
 		FString Name;
 		GetName(Name);
-		UE_LOG(LogTemp, Error, TEXT("%s: Fog Manager must exist only one instance. Current instance is %d "), *Name, OutActors.Num());
+		UE_LOG(LogTemp, Error, TEXT("%s: FogManager must exist only one instance in world. Current instance is %d "), *Name, OutActors.Num());
 	}
 
 	if (FogManager)

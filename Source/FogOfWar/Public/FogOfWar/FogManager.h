@@ -30,15 +30,18 @@ public:
 	void UpdateFogAgents();
 
 	/** Mid-Point Circle Drawing Algorithm */
+	UFUNCTION(Category = "Fog Manager", BlueprintCallable)
 	void DrawCircle(const FIntPoint& Center, int Radius);
 
-	void DrawDebugTile(const FLinearColor& Color, float Duration);
+	void DrawDebugTile(const FColor& Color, float Duration);
 
-	UPROPERTY(Category = "Fog Manager", EditAnywhere, BlueprintReadWrite)
-	bool bDebugTile = false;
+	void DrawDebugTileLine(const FIntPoint& Start, const FIntPoint& End);
 
 protected:
-	UPROPERTY(Category = "Fog Manager", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadWrite)
+	bool bDebugTile = false;
+
+	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	class ATopDownGrid* TopDownGrid = nullptr;
 
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
