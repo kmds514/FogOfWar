@@ -46,7 +46,7 @@ private:
 	bool bDebugGrid = false;
 
 	UPROPERTY(Category = "Config", EditAnywhere, meta = (ClampMin = 4, ClampMax = 256, UIMin = 4, UIMax = 256))
-	int GridResolution = 32;
+	int GridResolution = 128;
 
 	UPROPERTY(Category = "Config", EditAnywhere)
 	int GridVolumeScaleXY = 1024;
@@ -62,5 +62,5 @@ private:
 
 	/** Bias value for counting in first quadrant */
 	UPROPERTY()
-	int GridShift = 16;
+	int GridShift = 64;
 };

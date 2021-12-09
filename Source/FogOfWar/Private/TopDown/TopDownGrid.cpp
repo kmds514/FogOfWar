@@ -17,7 +17,7 @@ ATopDownGrid::ATopDownGrid()
 
 	GridVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("GridVolume"));
 	GridVolume->SetupAttachment(Billboard);
-	GridVolume->SetBoxExtent(FVector(512.0f));
+	GridVolume->SetBoxExtent(FVector(GridVolumeScaleXY, GridVolumeScaleXY, GridVolumeScaleZ));
 }
 
 void ATopDownGrid::OnConstruction(const FTransform& Transform)
@@ -42,13 +42,11 @@ void ATopDownGrid::UpdateGridTransform()
 	GridTransform.SetLocation(GridVolume->GetComponentTransform().GetLocation());
 	GridTransform.SetRotation(GridVolume->GetComponentTransform().GetRotation());
 
-	float ScaleX = GridVolume->Bounds.BoxExtent.X * 2 / GridResolution;
-	float ScaleY = GridVolume->Bounds.BoxExtent.Y * 2 / GridResolution;
-	GridTransform.SetScale3D({ScaleX, ScaleY, 1});
+	float GridUnit = GridVolumeScaleXY * 2 / GridResolution;
+	GridTransform.SetScale3D({ GridUnit, GridUnit, 1});
 
-	float TileExtentX = GridVolume->Bounds.BoxExtent.X / GridResolution;
-	float TileExtentY = GridVolume->Bounds.BoxExtent.Y / GridResolution;
-	TileExtent = FVector(TileExtentX, TileExtentY, 0);
+	float TileExtentXY = GridVolumeScaleXY / GridResolution;
+	TileExtent = FVector(TileExtentXY, TileExtentXY, 0);
 }
 
 FIntPoint ATopDownGrid::WorldToGrid(const FVector& WorldLocation)

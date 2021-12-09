@@ -31,11 +31,11 @@ public:
 
 	/** Mid-Point Circle Drawing Algorithm */
 	UFUNCTION(Category = "Fog Manager", BlueprintCallable)
-	void DrawCircle(const FIntPoint& Center, int Radius);
+	void DrawBresenhamCircle(const FIntPoint& Center, int Radius);
+
+	void DrawBresenhamLine(const FIntPoint& Start, const FIntPoint& End);
 
 	void DrawDebugTile(const FColor& Color, float Duration);
-
-	void DrawDebugTileLine(const FIntPoint& Start, const FIntPoint& End);
 
 protected:
 	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadWrite)
@@ -48,5 +48,5 @@ protected:
 	TArray<UFogAgentComponent*> FogAgents;
 
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
-	TArray<FIntPoint> CircleCoords;
+	TArray<FIntPoint> CachedCoords;
 };

@@ -89,37 +89,25 @@ void AFogManager::UpdateFogAgents()
 		{
 			if (Agent)
 			{
-				CircleCoords.Reset(CircleCoords.GetSlack());
+				CachedCoords.Reset(CachedCoords.GetSlack());
 
 				const FIntPoint& Coords = TopDownGrid->WorldToGrid(Agent->GetFogAgentLocation());
-				DrawCircle(Coords, Agent->Sight);
-				
-				const int Left = Coords.X - Agent->Sight;
-				const int Top = Coords.Y - Agent->Sight;
-				const int Right = Coords.X + Agent->Sight;
-				const int Bottom = Coords.Y + Agent->Sight;
-				for (int i = Left; i <= Right; ++i)
-				{
-					for (int j = Top; j <= Bottom; ++j)
-					{
-						//DrawDebugTileLine(Coords, {i, j});
-					}
-				}
+				DrawBresenhamCircle(Coords, Agent->Sight);
 			}
 		}
 	}
 }
 
-void AFogManager::DrawCircle(const FIntPoint& Center, int Radius)
+void AFogManager::DrawBresenhamCircle(const FIntPoint& Center, int Radius)
 {
 	int Discriminant = 1 - Radius;
 	int X = 0;
 	int Y = Radius;
 
-	CircleCoords.Add(Center + FIntPoint{  X,  Y }); // {  0,  R  }
-	CircleCoords.Add(Center + FIntPoint{  X, -Y }); // {  0, -R  }
-	CircleCoords.Add(Center + FIntPoint{  Y,  X }); // {  R,  0  }
-	CircleCoords.Add(Center + FIntPoint{ -Y,  X }); // { -R,  0  }
+	DrawBresenhamLine(Center, Center + FIntPoint{  X,  Y }); // {  0,  R  }
+	DrawBresenhamLine(Center, Center + FIntPoint{  X, -Y }); // {  0, -R  }
+	DrawBresenhamLine(Center, Center + FIntPoint{  Y,  X }); // {  R,  0  }
+	DrawBresenhamLine(Center, Center + FIntPoint{ -Y,  X }); // { -R,  0  }
 
 	++X;
 
@@ -127,34 +115,34 @@ void AFogManager::DrawCircle(const FIntPoint& Center, int Radius)
 	{
 		if (Discriminant < 0)
 		{
-			Discriminant = 2 * X + 1 + Discriminant; // d = 2x + 1 + d
+			Discriminant += 2 * X + 1; // d = d + 2x + 1
 		}
 		else
 		{
-			Discriminant = 2 * X - 2 * Y + 1 + Discriminant; // d = 2x - 2y + 1 + d
+			Discriminant += 2 * X - 2 * Y + 1; // d = d + 2x - 2y + 1
 
 			--Y;
 
-			for (int i = 0; i < X; ++i)
+			/*for (int i = 0; i < X; ++i)
 			{
-				/*CircleCoords.Add(Center + FIntPoint{  i,  Y });
+				CircleCoords.Add(Center + FIntPoint{  i,  Y });
 				CircleCoords.Add(Center + FIntPoint{ -i,  Y });
 				CircleCoords.Add(Center + FIntPoint{  i, -Y });
 				CircleCoords.Add(Center + FIntPoint{ -i, -Y });
 				CircleCoords.Add(Center + FIntPoint{  Y,  i });
 				CircleCoords.Add(Center + FIntPoint{ -Y,  i });
 				CircleCoords.Add(Center + FIntPoint{  Y, -i });
-				CircleCoords.Add(Center + FIntPoint{ -Y, -i });*/
-			}
+				CircleCoords.Add(Center + FIntPoint{ -Y, -i });
+			}*/
 		}
-		CircleCoords.Add(Center + FIntPoint{  X,  Y });
-		CircleCoords.Add(Center + FIntPoint{ -X,  Y });
-		CircleCoords.Add(Center + FIntPoint{  X, -Y });
-		CircleCoords.Add(Center + FIntPoint{ -X, -Y });
-		CircleCoords.Add(Center + FIntPoint{  Y,  X });
-		CircleCoords.Add(Center + FIntPoint{ -Y,  X });
-		CircleCoords.Add(Center + FIntPoint{  Y, -X });
-		CircleCoords.Add(Center + FIntPoint{ -Y, -X });
+		DrawBresenhamLine(Center, Center + FIntPoint{  X,  Y });
+		DrawBresenhamLine(Center, Center + FIntPoint{ -X,  Y });
+		DrawBresenhamLine(Center, Center + FIntPoint{  X, -Y });
+		DrawBresenhamLine(Center, Center + FIntPoint{ -X, -Y });
+		DrawBresenhamLine(Center, Center + FIntPoint{  Y,  X });
+		DrawBresenhamLine(Center, Center + FIntPoint{ -Y,  X });
+		DrawBresenhamLine(Center, Center + FIntPoint{  Y, -X });
+		DrawBresenhamLine(Center, Center + FIntPoint{ -Y, -X });
 
 		++X;
 	}
@@ -168,19 +156,7 @@ void AFogManager::DrawCircle(const FIntPoint& Center, int Radius)
 	}*/
 }
 
-void AFogManager::DrawDebugTile(const FColor& Color, float Duration)
-{
-	for (const auto& Coords : CircleCoords)
-	{
-		if (TopDownGrid)
-		{
-			FVector Location = TopDownGrid->GridToWorld(Coords);
-			DrawDebugPoint(GetWorld(), Location, TopDownGrid->GetTileExtent().X * 0.95f, Color, false, Duration);
-		}
-	}
-}
-
-void AFogManager::DrawDebugTileLine(const FIntPoint& Start, const FIntPoint& End)
+void AFogManager::DrawBresenhamLine(const FIntPoint& Start, const FIntPoint& End)
 {
 	int X = Start.X;
 	int Y = Start.Y;
@@ -206,7 +182,8 @@ void AFogManager::DrawDebugTileLine(const FIntPoint& Start, const FIntPoint& End
 				Discriminant += 2 * (DeltaY - DeltaX);
 				Y += YIncreasement;
 			}
-			DrawDebugPoint(GetWorld(), TopDownGrid->GridToWorld({ X, Y }), TopDownGrid->GetTileExtent().X * 0.95f, FColor::Green, false, GetWorld()->GetDeltaSeconds() * 2.0f);
+			//DrawDebugPoint(GetWorld(), TopDownGrid->GridToWorld({ X, Y }), TopDownGrid->GetTileExtent().X * 0.95f, FColor::Green, false, GetWorld()->GetDeltaSeconds() * 2.0f);
+			CachedCoords.AddUnique({ X, Y });
 		}
 	}
 	else
@@ -224,7 +201,20 @@ void AFogManager::DrawDebugTileLine(const FIntPoint& Start, const FIntPoint& End
 				Discriminant += 2 * (DeltaX - DeltaY);
 				X += XIncreasement;
 			}
-			DrawDebugPoint(GetWorld(), TopDownGrid->GridToWorld({ X, Y }), TopDownGrid->GetTileExtent().X * 0.95f, FColor::Black, false, GetWorld()->GetDeltaSeconds() * 2.0f);
+			//DrawDebugPoint(GetWorld(), TopDownGrid->GridToWorld({ X, Y }), TopDownGrid->GetTileExtent().X * 0.95f, FColor::Black, false, GetWorld()->GetDeltaSeconds() * 2.0f);
+			CachedCoords.AddUnique({ X, Y });
+		}
+	}
+}
+
+void AFogManager::DrawDebugTile(const FColor& Color, float Duration)
+{
+	for (const auto& Coords : CachedCoords)
+	{
+		if (TopDownGrid)
+		{
+			FVector Location = TopDownGrid->GridToWorld(Coords);
+			DrawDebugPoint(GetWorld(), Location, TopDownGrid->GetTileExtent().X * 0.95f, Color, false, Duration);
 		}
 	}
 }
