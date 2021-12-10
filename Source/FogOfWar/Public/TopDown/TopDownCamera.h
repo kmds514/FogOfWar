@@ -15,11 +15,6 @@ public:
 	// Sets default values for this pawn's properties
 	ATopDownCamera();
 
-protected:
-	virtual void BeginPlay() override;
-
-public:
-	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	void OnMoveForward(float Value);

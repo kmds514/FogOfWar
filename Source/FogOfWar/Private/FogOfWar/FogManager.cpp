@@ -46,7 +46,7 @@ void AFogManager::Tick(float DeltaTime)
 
 	if (bDebugTile)
 	{
-		DrawDebugTile(FColor::Green, DeltaTime * 2.0f);
+		DrawDebugTile(FColor::Black, DeltaTime * 2.0f);
 	}
 }
 
@@ -182,7 +182,6 @@ void AFogManager::DrawBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 				Discriminant += 2 * (DeltaY - DeltaX);
 				Y += YIncreasement;
 			}
-			//DrawDebugPoint(GetWorld(), TopDownGrid->GridToWorld({ X, Y }), TopDownGrid->GetTileExtent().X * 0.95f, FColor::Green, false, GetWorld()->GetDeltaSeconds() * 2.0f);
 			CachedCoords.AddUnique({ X, Y });
 		}
 	}
@@ -201,7 +200,6 @@ void AFogManager::DrawBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 				Discriminant += 2 * (DeltaX - DeltaY);
 				X += XIncreasement;
 			}
-			//DrawDebugPoint(GetWorld(), TopDownGrid->GridToWorld({ X, Y }), TopDownGrid->GetTileExtent().X * 0.95f, FColor::Black, false, GetWorld()->GetDeltaSeconds() * 2.0f);
 			CachedCoords.AddUnique({ X, Y });
 		}
 	}

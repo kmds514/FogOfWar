@@ -36,20 +36,6 @@ ATopDownCamera::ATopDownCamera()
 	Movement->MaxSpeed = TargetSpeed;
 }
 
-// Called when the game starts or when spawned
-void ATopDownCamera::BeginPlay()
-{
-	Super::BeginPlay();
-	
-}
-
-// Called every frame
-void ATopDownCamera::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
 // Called to bind functionality to input
 void ATopDownCamera::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
