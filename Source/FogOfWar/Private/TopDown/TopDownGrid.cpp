@@ -22,6 +22,8 @@ ATopDownGrid::ATopDownGrid()
 	GridVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("GridVolume"));
 	GridVolume->SetupAttachment(Billboard);
 	GridVolume->SetBoxExtent(FVector(GridVolumeExtentXY, GridVolumeExtentXY, GridVolumeExtentZ));
+
+	TileData.Reserve(GridResolution * GridResolution);
 }
 
 void ATopDownGrid::OnConstruction(const FTransform& Transform)
@@ -94,17 +96,23 @@ FVector ATopDownGrid::GridToWorld(const FIntPoint& GridCoords) const
 
 FVector ATopDownGrid::CoordsLineTraceToMinusZAxis(const FIntPoint& Coords)
 {
-	FVector GridLocation(Coords.X - GridShift, Coords.Y - GridShift, 0);
+	FVector Start = FVector::ZeroVector;
+	FVector End = FVector::ZeroVector;
+	FVector GridLocation = FVector::ZeroVector;
+
+	GridLocation.X = Coords.X - GridShift;
+	GridLocation.Y = Coords.Y - GridShift;
 
 	// Grid to world
-	FVector Start = GridTransform.TransformPosition(GridLocation);
-	Start += TileExtent;
+	Start = GridTransform.TransformPosition(GridLocation) + TileExtent;
 
 	// Set z to grid volume's top
 	Start.Z = GridVolume->GetComponentLocation().Z + GridVolumeExtentZ;
 
 	// Grid volume's bottom
-	FVector End = { Start.X, Start.Y, GridVolume->GetComponentLocation().Z - GridVolumeExtentZ };
+	End.X = Start.X;
+	End.Y = Start.Y; 
+	End.Z = GridVolume->GetComponentLocation().Z - GridVolumeExtentZ;
 
 	auto TraceChannel = UEngineTypes::ConvertToTraceType(ECC_Terrain);
 	auto DrawDebugType = bDebugLineTrace ? EDrawDebugTrace::Persistent : EDrawDebugTrace::None;
@@ -122,11 +130,13 @@ void ATopDownGrid::GenerateTileData()
 	{
 		for (int j = 0; j < GridResolution; j++)
 		{
-			FVector WorldLocation = CoordsLineTraceToMinusZAxis({ i, j });
+			FTile Tile = {};
+			Tile.WorldLocation = CoordsLineTraceToMinusZAxis({ i, j });
+			Tile.Height = FMath::FloorToInt(Tile.WorldLocation.Z / HeightDivisor);
+			Tile.bVisible = false;
+			Tile.bCanTravel = true;
 
-			int Height = FMath::FloorToInt(WorldLocation.Z / HeightDivisor);
-
-			TileData.Add(FIntPoint{ i, j }, FTile{ WorldLocation, Height, false, true });
+			TileData.Add(FIntPoint{ i, j }, Tile);
 		}
 	}
 }

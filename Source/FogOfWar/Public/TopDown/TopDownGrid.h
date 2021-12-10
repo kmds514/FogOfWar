@@ -53,7 +53,7 @@ public:
 	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
 	FVector GetTileExtent() const;
 
-	UPROPERTY(Category = "Top Down Grid", BlueprintReadOnly)
+	UPROPERTY(Category = "Top Down Grid", VisibleAnywhere, BlueprintReadOnly)
 	TMap<FIntPoint, FTile> TileData;
 
 protected:
@@ -64,10 +64,17 @@ protected:
 	FVector TileExtent;
 
 private:
+	UFUNCTION()
 	void UpdateGridTransform();
+
 	/** @return returns impact hit point */
+	UFUNCTION()
 	FVector CoordsLineTraceToMinusZAxis(const FIntPoint& Coords);
+
+	UFUNCTION()
 	void GenerateTileData();
+
+	UFUNCTION()
 	void DrawDebugGrid();
 
 	UPROPERTY(Category = "Config", EditAnywhere)
