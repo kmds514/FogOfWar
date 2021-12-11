@@ -31,9 +31,11 @@ public:
 
 	/** Mid-Point Circle Drawing Algorithm */
 	UFUNCTION(Category = "Fog Manager", BlueprintCallable)
-	void DrawBresenhamCircle(const FIntPoint& Center, int Radius);
+	void GetBresenhamCircle(const FIntPoint& Center, int Radius);
 
 	void DrawBresenhamLine(const FIntPoint& Start, const FIntPoint& End);
+
+	void GetCircleArea(const FIntPoint& Center, int Radius);
 
 	void DrawDebugTile(const FColor& Color, float Duration);
 

@@ -31,29 +31,21 @@ class FOGOFWAR_API ATopDownGrid : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
+	/** Sets default values for this actor's properties */
 	ATopDownGrid();
 
-	/**
-	 * Called when an instance of this class is placed (in editor) or spawned.
-	 * @param	Transform			The transform the actor was constructed at.
-	 */
+	/** Called when an instance of this class is placed (in editor) or spawned */
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-protected:
-	virtual void BeginPlay() override;
-
 public:
+	/** @return Returns grid coords index */
 	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
 	FIntPoint WorldToGrid(const FVector& WorldLocation) const;
-
-	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
-	FVector GridToWorld(const FIntPoint& GridCoords) const;
 	
 	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
 	FVector GetTileExtent() const;
 
-	UPROPERTY(Category = "Top Down Grid", VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = "Top Down Grid", BlueprintReadOnly)
 	TMap<FIntPoint, FTile> TileData;
 
 protected:
@@ -69,7 +61,7 @@ private:
 
 	/** @return returns impact hit point */
 	UFUNCTION()
-	FVector CoordsLineTraceToMinusZAxis(const FIntPoint& Coords);
+	bool CoordsLineTraceToMinusZAxis(const FIntPoint& Coords, FHitResult& OutHit);
 
 	UFUNCTION()
 	void GenerateTileData();
@@ -92,8 +84,8 @@ private:
 	UPROPERTY(Category = "Config", EditAnywhere)
 	int GridVolumeExtentZ = 1024;
 
-	UPROPERTY(Category = "Config", EditAnywhere)
-	float HeightDivisor = 200.0f;
+	UPROPERTY(Category = "Config", EditAnywhere, meta = (ClampMin = 10, ClampMax = 1000, UIMin = 10, UIMax = 1000))
+	int HeightDivisor = 200.0f;
 
 	UPROPERTY(Category = "Top Down Grid", VisibleAnywhere)
 	class UBillboardComponent* Billboard = nullptr;

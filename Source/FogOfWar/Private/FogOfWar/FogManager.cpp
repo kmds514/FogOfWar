@@ -46,7 +46,7 @@ void AFogManager::Tick(float DeltaTime)
 
 	if (bDebugTile)
 	{
-		DrawDebugTile(FColor::Black, DeltaTime * 2.0f);
+		DrawDebugTile(FColor::Silver, DeltaTime * 2.0f);
 	}
 }
 
@@ -85,75 +85,72 @@ void AFogManager::UpdateFogAgents()
 {
 	if (TopDownGrid)
 	{
+		CachedCoords.Reset(CachedCoords.GetSlack());
+
 		for (auto Agent : FogAgents)
 		{
 			if (Agent)
 			{
-				CachedCoords.Reset(CachedCoords.GetSlack());
-
 				const FIntPoint& Coords = TopDownGrid->WorldToGrid(Agent->GetFogAgentLocation());
-				DrawBresenhamCircle(Coords, Agent->Sight);
+				GetBresenhamCircle(Coords, Agent->Sight);
+				//GetCircleArea(Coords, Agent->Sight);
 			}
 		}
 	}
 }
 
-void AFogManager::DrawBresenhamCircle(const FIntPoint& Center, int Radius)
+void AFogManager::GetBresenhamCircle(const FIntPoint& Center, int Radius)
 {
-	int Discriminant = 1 - Radius;
 	int X = 0;
 	int Y = Radius;
+	int D = 1 - Radius;
 
-	DrawBresenhamLine(Center, Center + FIntPoint{  X,  Y }); // {  0,  R  }
-	DrawBresenhamLine(Center, Center + FIntPoint{  X, -Y }); // {  0, -R  }
-	DrawBresenhamLine(Center, Center + FIntPoint{  Y,  X }); // {  R,  0  }
-	DrawBresenhamLine(Center, Center + FIntPoint{ -Y,  X }); // { -R,  0  }
+	CachedCoords.AddUnique(Center + FIntPoint{  X,  Y });
+	CachedCoords.AddUnique(Center + FIntPoint{  X, -Y });
+	CachedCoords.AddUnique(Center + FIntPoint{  Y,  X });
+	CachedCoords.AddUnique(Center + FIntPoint{ -Y,  X });
 
-	++X;
-
-	while (X < Y)
+	for (X = 1; X < Y; ++X)
 	{
-		if (Discriminant < 0)
+		if (D < 0)
 		{
-			Discriminant += 2 * X + 1; // d = d + 2x + 1
+			D += 2 * X + 1;
 		}
 		else
 		{
-			Discriminant += 2 * X - 2 * Y + 1; // d = d + 2x - 2y + 1
-
+			D += 2 * X + 1 - 2 * Y;
 			--Y;
 
-			/*for (int i = 0; i < X; ++i)
+			for (int i = 0; i < X; ++i)
 			{
-				CircleCoords.Add(Center + FIntPoint{  i,  Y });
-				CircleCoords.Add(Center + FIntPoint{ -i,  Y });
-				CircleCoords.Add(Center + FIntPoint{  i, -Y });
-				CircleCoords.Add(Center + FIntPoint{ -i, -Y });
-				CircleCoords.Add(Center + FIntPoint{  Y,  i });
-				CircleCoords.Add(Center + FIntPoint{ -Y,  i });
-				CircleCoords.Add(Center + FIntPoint{  Y, -i });
-				CircleCoords.Add(Center + FIntPoint{ -Y, -i });
-			}*/
+				CachedCoords.AddUnique(Center + FIntPoint{  i,  Y });
+				CachedCoords.AddUnique(Center + FIntPoint{ -i,  Y });
+				CachedCoords.AddUnique(Center + FIntPoint{  i, -Y });
+				CachedCoords.AddUnique(Center + FIntPoint{ -i, -Y });
+				CachedCoords.AddUnique(Center + FIntPoint{  Y,  i });
+				CachedCoords.AddUnique(Center + FIntPoint{ -Y,  i });
+				CachedCoords.AddUnique(Center + FIntPoint{  Y, -i });
+				CachedCoords.AddUnique(Center + FIntPoint{ -Y, -i });
+			}
 		}
-		DrawBresenhamLine(Center, Center + FIntPoint{  X,  Y });
-		DrawBresenhamLine(Center, Center + FIntPoint{ -X,  Y });
-		DrawBresenhamLine(Center, Center + FIntPoint{  X, -Y });
-		DrawBresenhamLine(Center, Center + FIntPoint{ -X, -Y });
-		DrawBresenhamLine(Center, Center + FIntPoint{  Y,  X });
-		DrawBresenhamLine(Center, Center + FIntPoint{ -Y,  X });
-		DrawBresenhamLine(Center, Center + FIntPoint{  Y, -X });
-		DrawBresenhamLine(Center, Center + FIntPoint{ -Y, -X });
 
-		++X;
+		CachedCoords.AddUnique(Center + FIntPoint{  X,  Y });
+		CachedCoords.AddUnique(Center + FIntPoint{ -X,  Y });
+		CachedCoords.AddUnique(Center + FIntPoint{  X, -Y });
+		CachedCoords.AddUnique(Center + FIntPoint{ -X, -Y });
+		CachedCoords.AddUnique(Center + FIntPoint{  Y,  X });
+		CachedCoords.AddUnique(Center + FIntPoint{ -Y,  X });
+		CachedCoords.AddUnique(Center + FIntPoint{  Y, -X });
+		CachedCoords.AddUnique(Center + FIntPoint{ -Y, -X });
 	}
 
-	/*for (int i = Center.X - X + 1; i < Center.X + X; ++i)
+	for (int i = Center.X - X + 1; i < Center.X + X; ++i)
 	{
 		for (int j = Center.Y - Y + 1; j < Center.Y + Y; ++j)
 		{
-			CircleCoords.Add(Center + FIntPoint{ i, j });
+			CachedCoords.AddUnique(FIntPoint{ i, j });
 		}
-	}*/
+	}
 }
 
 void AFogManager::DrawBresenhamLine(const FIntPoint& Start, const FIntPoint& End)
@@ -205,14 +202,65 @@ void AFogManager::DrawBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 	}
 }
 
+void AFogManager::GetCircleArea(const FIntPoint& Center, int Radius)
+{
+	// 1. Center를 기준으로 Extent가 Radius인 사각형 타일을 구한다.
+	// 2. for X in 사각형 :
+	// 2-1. 왼쪽 타일부터 Center와의 거리 D를 계산한다.
+	// 2-2. D <= Radius면 멈추고 멈춘 위치 L을 저장한다.
+	// 2-3. 오른쪽 타일부터 Center와의 거리 D를 계산한다.
+	// 2-4. D <= Radius면 멈추고 멈춘 위치 R을 저장한다.
+	// 2-5. (X, L)부터 (X, R)까지의 타일이 원에 해당하는 타일이다.
+
+	// ^ X-Axis
+	// |
+	// |
+	// |- - - > Y-Axis
+	const int Left = Center.Y - Radius + 1;		
+	const int Right = Center.Y + Radius - 1;	
+	const int Top = Center.X + Radius - 1;		
+	const int Bottom = Center.X - Radius + 1;	
+
+	const float RadiuSquared = Radius * Radius;		
+	
+	for (int X = Bottom; X <= Top; ++X)
+	{
+		int LeftY = Left;
+		float Dist = FVector2D::DistSquared(Center, FIntPoint{ X, LeftY });
+		while (Dist > RadiuSquared)
+		{
+			++LeftY;
+			Dist = FVector2D::DistSquared(Center, FIntPoint{ X, LeftY });
+		}
+		
+		int RightY = Right;
+		Dist = FVector2D::DistSquared(Center, FIntPoint{ X, RightY });
+		while (Dist > RadiuSquared)
+		{
+			--RightY;
+			Dist = FVector2D::DistSquared(Center, FIntPoint{ X, RightY });
+		}
+
+		for (int i = LeftY; i <= RightY; ++i)
+		{
+			CachedCoords.AddUnique({ X, i });
+		}
+	}
+}
+
 void AFogManager::DrawDebugTile(const FColor& Color, float Duration)
 {
 	for (const auto& Coords : CachedCoords)
 	{
 		if (TopDownGrid)
 		{
-			FVector Location = TopDownGrid->GridToWorld(Coords);
-			DrawDebugPoint(GetWorld(), Location, TopDownGrid->GetTileExtent().X * 0.95f, Color, false, Duration);
+			FTile* Tile = TopDownGrid->TileData.Find(Coords);
+			if (Tile)
+			{
+				FVector Location = Tile->WorldLocation;
+				Location.Z += 1.0f;
+				DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.95f, Color, false, Duration);
+			}
 		}
 	}
 }

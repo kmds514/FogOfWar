@@ -40,19 +40,6 @@ void ATopDownGrid::OnConstruction(const FTransform& Transform)
 	}
 }
 
-void ATopDownGrid::BeginPlay()
-{
-	Super::BeginPlay();
-
-	UpdateGridTransform();
-	GenerateTileData();
-
-	if (bDebugGrid)
-	{
-		DrawDebugGrid();
-	}
-}
-
 void ATopDownGrid::UpdateGridTransform()
 {
 	GridResolution = FMath::Clamp<int>(FMath::RoundUpToPowerOfTwo(GridResolution), 4, 256);
@@ -80,21 +67,7 @@ FIntPoint ATopDownGrid::WorldToGrid(const FVector& WorldLocation) const
 	return { X, Y };
 }
 
-FVector ATopDownGrid::GridToWorld(const FIntPoint& GridCoords) const
-{
-	const FTile* const Tile = TileData.Find(GridCoords);
-	if (Tile)
-	{
-		return Tile->WorldLocation;
-	}
-
-	FString Name;
-	GetName(Name);
-	UE_LOG(LogTemp, Warning, TEXT("%s: Can't find tile"), *Name);
-	return FVector::ZeroVector;
-}
-
-FVector ATopDownGrid::CoordsLineTraceToMinusZAxis(const FIntPoint& Coords)
+bool ATopDownGrid::CoordsLineTraceToMinusZAxis(const FIntPoint& Coords, FHitResult& OutHit)
 {
 	FVector Start = FVector::ZeroVector;
 	FVector End = FVector::ZeroVector;
@@ -103,10 +76,10 @@ FVector ATopDownGrid::CoordsLineTraceToMinusZAxis(const FIntPoint& Coords)
 	GridLocation.X = Coords.X - GridShift;
 	GridLocation.Y = Coords.Y - GridShift;
 
-	// Grid to world
+	// Grid location to world location
 	Start = GridTransform.TransformPosition(GridLocation) + TileExtent;
 
-	// Set z to grid volume's top
+	// Grid volume's top
 	Start.Z = GridVolume->GetComponentLocation().Z + GridVolumeExtentZ;
 
 	// Grid volume's bottom
@@ -116,10 +89,9 @@ FVector ATopDownGrid::CoordsLineTraceToMinusZAxis(const FIntPoint& Coords)
 
 	auto TraceChannel = UEngineTypes::ConvertToTraceType(ECC_Terrain);
 	auto DrawDebugType = bDebugLineTrace ? EDrawDebugTrace::Persistent : EDrawDebugTrace::None;
-	FHitResult OutHit;
 	UKismetSystemLibrary::LineTraceSingle(GetWorld(), Start, End, TraceChannel, false, TArray<AActor*>(), DrawDebugType, OutHit, true);
 
-	return OutHit.ImpactPoint;
+	return OutHit.bBlockingHit;
 }
 
 void ATopDownGrid::GenerateTileData()
@@ -130,13 +102,17 @@ void ATopDownGrid::GenerateTileData()
 	{
 		for (int j = 0; j < GridResolution; j++)
 		{
-			FTile Tile = {};
-			Tile.WorldLocation = CoordsLineTraceToMinusZAxis({ i, j });
-			Tile.Height = FMath::FloorToInt(Tile.WorldLocation.Z / HeightDivisor);
-			Tile.bVisible = false;
-			Tile.bCanTravel = true;
+			FHitResult OutHit = {};
+			if (CoordsLineTraceToMinusZAxis({ i, j }, OutHit))
+			{
+				FTile Tile = {};
+				Tile.WorldLocation = OutHit.ImpactPoint;
+				Tile.Height = FMath::FloorToInt(Tile.WorldLocation.Z / static_cast<float>(HeightDivisor));
+				Tile.bVisible = false;
+				Tile.bCanTravel = true;
 
-			TileData.Add(FIntPoint{ i, j }, Tile);
+				TileData.Add(FIntPoint{ i, j }, Tile);
+			}
 		}
 	}
 }
@@ -153,15 +129,11 @@ void ATopDownGrid::DrawDebugGrid()
 		return;
 	}
 
-	for (int i = 0; i < GridResolution; i++)
+	for (auto Tile : TileData)
 	{
-		for (int j = 0; j < GridResolution; j++)
-		{
-			FVector Location = GridToWorld({ i, j });
-			Location.Z += 1.0f;
+		FVector Location = Tile.Value.WorldLocation;
+		Location.Z += 1.0f;
 
-			DrawDebugBox(GetWorld(), Location, TileExtent * 0.95f, FColor::Green, true);
-			//DrawDebugPoint(GetWorld(), WorldLocation, TileExtent.X * 0.5f, FColor::Green, true);
-		}
+		DrawDebugBox(GetWorld(), Location, TileExtent * 0.95f, FColor::Green, true);
 	}
 }
