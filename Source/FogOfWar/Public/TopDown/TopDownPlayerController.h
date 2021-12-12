@@ -29,10 +29,10 @@ public:
 private:
 	EEdgeLocation CheckEdgeMovement();
 
-	UPROPERTY()
+	UPROPERTY(Category = "Top Down", BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class ATopDownCamera* TopDownCamera = nullptr;
+
 	FVector2D MouseLocation;
 	FVector2D ViewportSize;
-
 	EEdgeLocation EdgeLocation = EEdgeLocation::None;
 };

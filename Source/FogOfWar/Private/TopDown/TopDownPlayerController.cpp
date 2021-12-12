@@ -3,13 +3,13 @@
 
 #include "TopDown/TopDownPlayerController.h"
 #include "TopDown/TopDownCamera.h"
+#include "TopDown/TopDownHUD.h"
 
 void ATopDownPlayerController::BeginPlay()
 {
     Super::BeginPlay();
 
 	TopDownCamera = GetPawn<ATopDownCamera>();
-    EdgeLocation = EEdgeLocation::None;
 }
 
 void ATopDownPlayerController::Tick(float DeltaTime)
