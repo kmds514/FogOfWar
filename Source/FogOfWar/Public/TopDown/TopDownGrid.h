@@ -59,7 +59,7 @@ private:
 	UFUNCTION()
 	void UpdateGridTransform();
 
-	/** @return returns impact hit point */
+	/** @return returns blocking hit */
 	UFUNCTION()
 	bool CoordsLineTraceToMinusZAxis(const FIntPoint& Coords, FHitResult& OutHit);
 

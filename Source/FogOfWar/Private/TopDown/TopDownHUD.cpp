@@ -52,7 +52,7 @@ void ATopDownHUD::EndDrawRect()
 	{
 		// Sends Actors to TopDownPlayerController...
 	}
-	SelectedActors.Empty();
+	SelectedActors.Reset(SelectedActors.GetSlack());
 }
 
 void ATopDownHUD::DrawRectNoFill(const FLinearColor& LineColor, float LineThickness)

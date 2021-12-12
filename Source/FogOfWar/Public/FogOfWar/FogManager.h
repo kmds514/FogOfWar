@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "TopDown/TopDownGrid.h"
 #include "FogManager.generated.h"
 
 class UFogAgentComponent;
@@ -29,15 +30,12 @@ public:
 	void RemoveFogAgent(UFogAgentComponent* const FogAgent);
 	void UpdateFogAgents();
 
-	/** Mid-Point Circle Drawing Algorithm */
-	UFUNCTION(Category = "Fog Manager", BlueprintCallable)
-	void GetBresenhamCircle(const FIntPoint& Center, int Radius);
+	/** https://en.wikipedia.org/wiki/Midpoint_circle_algorithm */
+	void GetBresenhamCircle(const FIntPoint& Center, int Radius, int AgentHeight);
 
-	void DrawBresenhamLine(const FIntPoint& Start, const FIntPoint& End);
+	void GetBresenhamLine(const FIntPoint& Start, const FIntPoint& End);
 
 	void GetCircleArea(const FIntPoint& Center, int Radius);
-
-	void DrawDebugTile(const FColor& Color, float Duration);
 
 protected:
 	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadWrite)
@@ -50,5 +48,13 @@ protected:
 	TArray<UFogAgentComponent*> FogAgents;
 
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
-	TArray<FIntPoint> CachedCoords;
+	TArray<FIntPoint> Visibles;
+
+	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
+	TArray<FIntPoint> Obstacles;
+
+private:
+	void DrawDebugTile(float Duration);
+
+	void AddTileCoords(const FIntPoint& TileCoords, int AgentHeight);
 };

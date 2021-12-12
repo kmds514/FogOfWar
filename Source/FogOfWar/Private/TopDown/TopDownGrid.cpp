@@ -8,7 +8,6 @@
 #include "DrawDebugHelpers.h"
 
 #define ECC_Terrain ECC_GameTraceChannel1
-#define ECC_Obstacle ECC_GameTraceChannel2
 
 // Sets default values
 ATopDownGrid::ATopDownGrid()

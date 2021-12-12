@@ -38,10 +38,10 @@ private:
 
 protected:
 	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "200.0", ClampMax = "1000.0", UIMin = "200.0", UIMax = "1000.0"))
-	float MinDistance = 300.0f;
+	float MinDistance = 600.0f;
 
 	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "1000.0", ClampMax = "2000.0", UIMin = "1000.0", UIMax = "2000.0"))
-	float MaxDistance = 1200.0f;
+	float MaxDistance = 1600.0f;
 
 	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "50.0", ClampMax = "80.0", UIMin = "50.0", UIMax = "80.0"))
 	float MinFOV = 60.0f;
@@ -50,16 +50,16 @@ protected:
 	float MaxFOV = 90.0f;
 
 	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "5.0", ClampMax = "45.0", UIMin = "5.0", UIMax = "45.0"))
-	float MinPitch = 15.0f;
+	float MinPitch = 45.0f;
 
 	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "45.0", ClampMax = "85.0", UIMin = "45.0", UIMax = "85.0"))
-	float MaxPitch = 65.0f;
+	float MaxPitch = 70.0f;
 
 	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "200.0", ClampMax = "1000.0", UIMin = "200.0", UIMax = "1000.0"))
-	float MinSpeed = 600.0f;
+	float MinSpeed = 800.0f;
 
 	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "1000.0", ClampMax = "3000.0", UIMin = "1000.0", UIMax = "3000.0"))
-	float MaxSpeed = 2400.0f;
+	float MaxSpeed = 2600.0f;
 
 	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "0.0", ClampMax = "20.0", UIMin = "0.0", UIMax = "20.0"))
 	float InterpSpeed = 10.0f;

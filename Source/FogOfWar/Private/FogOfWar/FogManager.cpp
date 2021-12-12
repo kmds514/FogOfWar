@@ -3,7 +3,6 @@
 
 #include "FogOfWar/FogManager.h"
 #include "FogOfWar/FogAgentComponent.h"
-#include "TopDown/TopDownGrid.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 
@@ -46,7 +45,7 @@ void AFogManager::Tick(float DeltaTime)
 
 	if (bDebugTile)
 	{
-		DrawDebugTile(FColor::Silver, DeltaTime * 2.0f);
+		DrawDebugTile(DeltaTime * 2.0f);
 	}
 }
 
@@ -83,32 +82,40 @@ void AFogManager::RemoveFogAgent(UFogAgentComponent* const FogAgent)
 
 void AFogManager::UpdateFogAgents()
 {
-	if (TopDownGrid)
+	if (TopDownGrid == nullptr)
 	{
-		CachedCoords.Reset(CachedCoords.GetSlack());
+		return;
+	}
 
-		for (auto Agent : FogAgents)
+	Visibles.Reset(Visibles.GetSlack());
+	Obstacles.Reset(Obstacles.GetSlack());
+
+	for (auto Agent : FogAgents)
+	{
+		if (Agent == nullptr)
 		{
-			if (Agent)
-			{
-				const FIntPoint& Coords = TopDownGrid->WorldToGrid(Agent->GetFogAgentLocation());
-				GetBresenhamCircle(Coords, Agent->Sight);
-				//GetCircleArea(Coords, Agent->Sight);
-			}
+			continue;
+		}
+
+		const FIntPoint& AgentCoords = TopDownGrid->WorldToGrid(Agent->GetFogAgentLocation());
+		const FTile* AgentTile = TopDownGrid->TileData.Find(AgentCoords);
+		if (AgentTile)
+		{
+			GetBresenhamCircle(AgentCoords, Agent->Sight, AgentTile->Height);
 		}
 	}
 }
 
-void AFogManager::GetBresenhamCircle(const FIntPoint& Center, int Radius)
+void AFogManager::GetBresenhamCircle(const FIntPoint& Center, int Radius, int AgentHeight)
 {
 	int X = 0;
 	int Y = Radius;
-	int D = 1 - Radius;
+	int D = 1 - Radius; // Discriminant
 
-	CachedCoords.AddUnique(Center + FIntPoint{  X,  Y });
-	CachedCoords.AddUnique(Center + FIntPoint{  X, -Y });
-	CachedCoords.AddUnique(Center + FIntPoint{  Y,  X });
-	CachedCoords.AddUnique(Center + FIntPoint{ -Y,  X });
+	AddTileCoords(Center + FIntPoint{  X,  Y }, AgentHeight);
+	AddTileCoords(Center + FIntPoint{  X, -Y }, AgentHeight);
+	AddTileCoords(Center + FIntPoint{  Y,  X }, AgentHeight);
+	AddTileCoords(Center + FIntPoint{ -Y,  X }, AgentHeight);
 
 	for (X = 1; X < Y; ++X)
 	{
@@ -123,37 +130,37 @@ void AFogManager::GetBresenhamCircle(const FIntPoint& Center, int Radius)
 
 			for (int i = 0; i < X; ++i)
 			{
-				CachedCoords.AddUnique(Center + FIntPoint{  i,  Y });
-				CachedCoords.AddUnique(Center + FIntPoint{ -i,  Y });
-				CachedCoords.AddUnique(Center + FIntPoint{  i, -Y });
-				CachedCoords.AddUnique(Center + FIntPoint{ -i, -Y });
-				CachedCoords.AddUnique(Center + FIntPoint{  Y,  i });
-				CachedCoords.AddUnique(Center + FIntPoint{ -Y,  i });
-				CachedCoords.AddUnique(Center + FIntPoint{  Y, -i });
-				CachedCoords.AddUnique(Center + FIntPoint{ -Y, -i });
+				AddTileCoords(Center + FIntPoint{  i,  Y }, AgentHeight);
+				AddTileCoords(Center + FIntPoint{ -i,  Y }, AgentHeight);
+				AddTileCoords(Center + FIntPoint{  i, -Y }, AgentHeight);
+				AddTileCoords(Center + FIntPoint{ -i, -Y }, AgentHeight);
+				AddTileCoords(Center + FIntPoint{  Y,  i }, AgentHeight);
+				AddTileCoords(Center + FIntPoint{ -Y,  i }, AgentHeight);
+				AddTileCoords(Center + FIntPoint{  Y, -i }, AgentHeight);
+				AddTileCoords(Center + FIntPoint{ -Y, -i }, AgentHeight);
 			}
 		}
 
-		CachedCoords.AddUnique(Center + FIntPoint{  X,  Y });
-		CachedCoords.AddUnique(Center + FIntPoint{ -X,  Y });
-		CachedCoords.AddUnique(Center + FIntPoint{  X, -Y });
-		CachedCoords.AddUnique(Center + FIntPoint{ -X, -Y });
-		CachedCoords.AddUnique(Center + FIntPoint{  Y,  X });
-		CachedCoords.AddUnique(Center + FIntPoint{ -Y,  X });
-		CachedCoords.AddUnique(Center + FIntPoint{  Y, -X });
-		CachedCoords.AddUnique(Center + FIntPoint{ -Y, -X });
+		AddTileCoords(Center + FIntPoint{  X,  Y }, AgentHeight);
+		AddTileCoords(Center + FIntPoint{ -X,  Y }, AgentHeight);
+		AddTileCoords(Center + FIntPoint{  X, -Y }, AgentHeight);
+		AddTileCoords(Center + FIntPoint{ -X, -Y }, AgentHeight);
+		AddTileCoords(Center + FIntPoint{  Y,  X }, AgentHeight);
+		AddTileCoords(Center + FIntPoint{ -Y,  X }, AgentHeight);
+		AddTileCoords(Center + FIntPoint{  Y, -X }, AgentHeight);
+		AddTileCoords(Center + FIntPoint{ -Y, -X }, AgentHeight);
 	}
 
 	for (int i = Center.X - X + 1; i < Center.X + X; ++i)
 	{
 		for (int j = Center.Y - Y + 1; j < Center.Y + Y; ++j)
 		{
-			CachedCoords.AddUnique(FIntPoint{ i, j });
+			AddTileCoords(FIntPoint{ i, j }, AgentHeight);
 		}
 	}
 }
 
-void AFogManager::DrawBresenhamLine(const FIntPoint& Start, const FIntPoint& End)
+void AFogManager::GetBresenhamLine(const FIntPoint& Start, const FIntPoint& End)
 {
 	int X = Start.X;
 	int Y = Start.Y;
@@ -179,7 +186,7 @@ void AFogManager::DrawBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 				Discriminant += 2 * (DeltaY - DeltaX);
 				Y += YIncreasement;
 			}
-			CachedCoords.AddUnique({ X, Y });
+			// Add tile coords
 		}
 	}
 	else
@@ -197,7 +204,7 @@ void AFogManager::DrawBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 				Discriminant += 2 * (DeltaX - DeltaY);
 				X += XIncreasement;
 			}
-			CachedCoords.AddUnique({ X, Y });
+			// Add tile coords
 		}
 	}
 }
@@ -243,24 +250,55 @@ void AFogManager::GetCircleArea(const FIntPoint& Center, int Radius)
 
 		for (int i = LeftY; i <= RightY; ++i)
 		{
-			CachedCoords.AddUnique({ X, i });
+			// Add tile coords
 		}
 	}
 }
 
-void AFogManager::DrawDebugTile(const FColor& Color, float Duration)
+void AFogManager::DrawDebugTile(float Duration)
 {
-	for (const auto& Coords : CachedCoords)
+	if (TopDownGrid == nullptr)
 	{
-		if (TopDownGrid)
+		return;
+	}
+
+	for (const auto& Coords : Visibles)
+	{
+		FTile* Tile = TopDownGrid->TileData.Find(Coords);
+		if (Tile)
 		{
-			FTile* Tile = TopDownGrid->TileData.Find(Coords);
-			if (Tile)
-			{
-				FVector Location = Tile->WorldLocation;
-				Location.Z += 1.0f;
-				DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.95f, Color, false, Duration);
-			}
+			FVector Location = Tile->WorldLocation;
+			Location.Z += 1.0f;
+			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.95f, FColor::Silver, false, Duration);
+		}
+	}
+
+	for (const auto& Coords : Obstacles)
+	{
+		FTile* Tile = TopDownGrid->TileData.Find(Coords);
+		if (Tile)
+		{
+			FVector Location = Tile->WorldLocation;
+			Location.Z += 2.0f;
+			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.95f, FColor::Orange, false, Duration);
+		}
+	}
+}
+
+void AFogManager::AddTileCoords(const FIntPoint& TileCoords, int AgentHeight)
+{
+	FTile* Tile = TopDownGrid->TileData.Find(TileCoords);
+	if (Tile)
+	{
+		if (Tile->Height <= AgentHeight)
+		{
+			// Add visible list
+			Visibles.AddUnique(TileCoords);
+		}
+		else
+		{
+			// Add obstacle list
+			Obstacles.AddUnique(TileCoords);
 		}
 	}
 }
