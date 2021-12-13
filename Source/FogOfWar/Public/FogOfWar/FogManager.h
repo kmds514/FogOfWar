@@ -47,10 +47,18 @@ protected:
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	TArray<UFogAgentComponent*> FogAgents;
 
-	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
+	/** Tiles that need to investigate */
+	UPROPERTY()
+	TArray<FIntPoint> CachedTiles;
+	UPROPERTY()
+	TArray<FIntPoint> CustomCircles;
+
+	/** Tiles that finish investigation */
+	UPROPERTY()
 	TArray<FIntPoint> Visibles;
 
-	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
+	/** Tiles that finish investigation */
+	UPROPERTY()
 	TArray<FIntPoint> Obstacles;
 
 private:
