@@ -26,7 +26,7 @@ ATopDownCamera::ATopDownCamera()
 	Movement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("FloatingPawnMovement"));
 
 	TargetDistance = MaxDistance;
-	TargetFOV = MaxFOV;
+	TargetFOV = MinFOV;
 	TargetPitch = MaxPitch;
 	TargetSpeed = MaxSpeed;
 
@@ -67,6 +67,11 @@ void ATopDownCamera::OnMoveRight(float Value)
 
 void ATopDownCamera::OnZoomCamera(float Value)
 {
+	if (GetWorld() == nullptr)
+	{
+		return;
+	}
+
 	float AxisValue = Value;
 
 	auto InterpValue = [&](float Min, float Max, float Current, float& Target)
@@ -79,7 +84,6 @@ void ATopDownCamera::OnZoomCamera(float Value)
 	};
 
 	Handle->TargetArmLength = InterpValue(MinDistance, MaxDistance, Handle->TargetArmLength, TargetDistance);
-	Camera->FieldOfView = InterpValue(MinFOV, MaxFOV, Camera->FieldOfView, TargetFOV);
 	Movement->MaxSpeed = InterpValue(MinSpeed, MaxSpeed, Movement->MaxSpeed, TargetSpeed);
 
 	// 각도 저장
@@ -94,4 +98,17 @@ void ATopDownCamera::OnZoomCamera(float Value)
 	// 각도 선형보간
 	Rotation.Pitch = -FMath::FInterpTo(-Rotation.Pitch, TargetPitch, GetWorld()->GetDeltaSeconds(), InterpSpeed);
 	Handle->SetRelativeRotation(Rotation);
+
+	// FOV 저장
+	float FOV = Camera->FieldOfView;
+
+	// FOV 증감량 계산
+	float FOVStrength = (MaxFOV - MinFOV) / static_cast<float>(NumberOfZoomLevel) * AxisValue;
+
+	// FOV 제한
+	TargetFOV = FMath::Clamp(TargetFOV + FOVStrength, MinFOV, MaxFOV);
+
+	// FOV 선형보간
+	FOV = FMath::FInterpTo(FOV, TargetFOV, GetWorld()->GetDeltaSeconds(), InterpSpeed);
+	Camera->FieldOfView = FOV;
 }
