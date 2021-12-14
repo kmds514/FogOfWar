@@ -41,7 +41,7 @@ void ATopDownGrid::OnConstruction(const FTransform& Transform)
 
 void ATopDownGrid::UpdateGridTransform()
 {
-	GridResolution = FMath::Clamp<int>(FMath::RoundUpToPowerOfTwo(GridResolution), 4, 256);
+	GridResolution = FMath::Clamp<int>(FMath::RoundUpToPowerOfTwo(GridResolution), 4, 512);
 	GridShift = GridResolution / 2;
 
 	GridVolume->SetBoxExtent(FVector(GridVolumeExtentXY, GridVolumeExtentXY, GridVolumeExtentZ));

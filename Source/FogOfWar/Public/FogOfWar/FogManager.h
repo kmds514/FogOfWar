@@ -30,12 +30,16 @@ public:
 	void RemoveFogAgent(UFogAgentComponent* const FogAgent);
 	void UpdateFogAgents();
 
-	/** https://en.wikipedia.org/wiki/Midpoint_circle_algorithm */
 	void GetBresenhamCircle(const FIntPoint& Center, int Radius, int AgentHeight);
 
 	void GetBresenhamLine(const FIntPoint& Start, const FIntPoint& End);
 
 	void GetCircleArea(const FIntPoint& Center, int Radius);
+
+	void GetCircleOctantZero(const FIntPoint& Center, const int Radius);
+
+	/** @return Returns whether the Tile can draw circles */
+	bool IsCircle(const FIntPoint& Center, const FIntPoint& Tile, const int Radius);
 
 protected:
 	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadWrite)
@@ -47,22 +51,9 @@ protected:
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	TArray<UFogAgentComponent*> FogAgents;
 
-	/** Tiles that need to investigate */
 	UPROPERTY()
 	TArray<FIntPoint> CachedTiles;
-	UPROPERTY()
-	TArray<FIntPoint> CustomCircles;
-
-	/** Tiles that finish investigation */
-	UPROPERTY()
-	TArray<FIntPoint> Visibles;
-
-	/** Tiles that finish investigation */
-	UPROPERTY()
-	TArray<FIntPoint> Obstacles;
 
 private:
 	void DrawDebugTile(float Duration);
-
-	void AddTileCoords(const FIntPoint& TileCoords, int AgentHeight);
 };

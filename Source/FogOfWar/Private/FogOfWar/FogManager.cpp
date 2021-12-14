@@ -87,11 +87,7 @@ void AFogManager::UpdateFogAgents()
 		return;
 	}
 
-	CachedTiles.Reset(CachedTiles.GetSlack()); // temp
-	CustomCircles.Reset(CachedTiles.GetSlack()); // temp
-
-	Visibles.Reset(Visibles.GetSlack());
-	Obstacles.Reset(Obstacles.GetSlack());
+	CachedTiles.Reset(CachedTiles.GetSlack());
 
 	for (auto Agent : FogAgents)
 	{
@@ -105,11 +101,7 @@ void AFogManager::UpdateFogAgents()
 		{
 			continue;
 		}
-
-		//CachedTiles.Reset(CachedTiles.GetSlack());
-		// 조사가 필요한 타일을 CachedTiles에 저장한다.
-		GetBresenhamCircle(AgentCoords, Agent->Sight, AgentTile->Height);
-		GetCircleArea(AgentCoords, Agent->Sight);
+		GetCircleOctantZero(AgentCoords, Agent->Sight);
 	}
 }
 
@@ -234,17 +226,17 @@ void AFogManager::GetCircleArea(const FIntPoint& Center, int Radius)
 	const int Top = Center.X + Radius - 1;		
 	const int Bottom = Center.X - Radius + 1;	
 
-	const float RadiuSquared = Radius * Radius;		
+	const float RadiuSquared = Radius * Radius /* 원이 부드럽게 그려지도록 값을 살짝 줄인다. */ * 0.95f;
 	
 	for (int X = Bottom; X <= Top; ++X)
 	{
 		int LeftY = Left;
 		
-		float Dist = FVector2D::DistSquared(Center, FIntPoint{ X, LeftY });
+		float Dist = (X - Center.X) * (X - Center.X) + (LeftY - Center.Y) * (LeftY - Center.Y);
 		while (Dist > RadiuSquared)
 		{
 			++LeftY;
-			Dist = FVector2D::DistSquared(Center, FIntPoint{ X, LeftY });
+			Dist = (X - Center.X) * (X - Center.X) + (LeftY - Center.Y) * (LeftY - Center.Y);
 		}
 		
 		int RightY = Right;
@@ -258,9 +250,38 @@ void AFogManager::GetCircleArea(const FIntPoint& Center, int Radius)
 		for (int i = LeftY; i <= RightY; ++i)
 		{
 			// Add tile coords
-			CustomCircles.Add({ X, i });
+			CachedTiles.Add({ X, i });
 		}
 	}
+}
+
+void AFogManager::GetCircleOctantZero(const FIntPoint& Center, const int Radius)
+{
+	FIntPoint TopVector = { Center.X + 1, Center.Y + 1 };
+	FIntPoint BottomVector = { 0, Center.Y + 1 };
+
+	for (int i = Center.X; i < Center.X + Radius; ++i)
+	{
+		for (int j = TopVector.Y; j >= BottomVector.Y; --j)
+		{
+			if (IsCircle(Center, FIntPoint{ i, j }, Radius))
+			{
+				CachedTiles.Add({ i, j });
+			}
+		}
+	}
+}
+
+bool AFogManager::IsCircle(const FIntPoint& Center, const FIntPoint& Tile, const int Radius)
+{
+	int DistX = Tile.X - Center.X;
+	int DistY = Tile.Y - Center.Y;
+
+	int SqrR = FMath::Square<int>(Radius)/* * 0.95 */;
+	int SqrDx = FMath::Square<int>(DistX);
+	int SqrDy = FMath::Square<int>(DistY);
+
+	return SqrDx + SqrDy < SqrR;
 }
 
 void AFogManager::DrawDebugTile(float Duration)
@@ -278,58 +299,6 @@ void AFogManager::DrawDebugTile(float Duration)
 			FVector Location = Tile->WorldLocation;
 			Location.Z += 1.0f;
 			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.95f, FColor::Black, false, Duration);
-		}
-	}
-
-	for (const auto& Coords : CustomCircles)
-	{
-		FTile* Tile = TopDownGrid->TileData.Find(Coords);
-		if (Tile)
-		{
-			FVector Location = Tile->WorldLocation;
-			Location.Z += 1.0f;
-			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.8f, FColor::Green, false, Duration);
-		}
-	}
-
-
-	/*for (const auto& Coords : Visibles)
-	{
-		FTile* Tile = TopDownGrid->TileData.Find(Coords);
-		if (Tile)
-		{
-			FVector Location = Tile->WorldLocation;
-			Location.Z += 1.0f;
-			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.95f, FColor::Silver, false, Duration);
-		}
-	}
-
-	for (const auto& Coords : Obstacles)
-	{
-		FTile* Tile = TopDownGrid->TileData.Find(Coords);
-		if (Tile)
-		{
-			FVector Location = Tile->WorldLocation;
-			Location.Z += 2.0f;
-			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.95f, FColor::Orange, false, Duration);
-		}
-	}*/
-}
-
-void AFogManager::AddTileCoords(const FIntPoint& TileCoords, int AgentHeight)
-{
-	FTile* Tile = TopDownGrid->TileData.Find(TileCoords);
-	if (Tile)
-	{
-		// Visible tile
-		if (Tile->Height <= AgentHeight)
-		{
-			Visibles.AddUnique(TileCoords);
-		}
-		// Obstacle tile
-		else
-		{
-			Obstacles.AddUnique(TileCoords);
 		}
 	}
 }
