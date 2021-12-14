@@ -101,7 +101,7 @@ void AFogManager::UpdateFogAgents()
 		{
 			continue;
 		}
-		GetCircleOctantZero(AgentCoords, Agent->Sight);
+		GetCircleQuadrantZero(AgentCoords, Agent->Sight);
 	}
 }
 
@@ -255,24 +255,102 @@ void AFogManager::GetCircleArea(const FIntPoint& Center, int Radius)
 	}
 }
 
-void AFogManager::GetCircleOctantZero(const FIntPoint& Center, const int Radius)
+void AFogManager::GetCircleQuadrantZero(const FIntPoint& Center, const int Radius)
 {
-	FIntPoint TopVector = { Center.X + 1, Center.Y + 1 };
-	FIntPoint BottomVector = { 0, Center.Y + 1 };
+	TQueue<FColumnPortion> Columns;
 
-	for (int i = Center.X; i < Center.X + Radius; ++i)
+	FIntPoint TopVector = { Center.X + Radius, Center.Y };
+	FIntPoint BottomVector = { Center.X, Center.Y + Radius };
+	Columns.Enqueue({ Center.Y, TopVector, BottomVector });
+
+	while (Columns.IsEmpty() == false)
 	{
-		for (int j = TopVector.Y; j >= BottomVector.Y; --j)
+		FColumnPortion ColumnPortion = {};
+		Columns.Dequeue(ColumnPortion);
+		FIntPoint Prev = { TNumericLimits<int32>::Max(), TNumericLimits<int32>::Max() };
+
+		for (int X = ColumnPortion.TopVector.X; X >= ColumnPortion.BottomVector.X; --X)
 		{
-			if (IsCircle(Center, FIntPoint{ i, j }, Radius))
+			FIntPoint Curr = { X, ColumnPortion.Column };
+
+			if (IsCircle(Center, Curr, Radius) == false)
 			{
-				CachedTiles.Add({ i, j });
+				continue;
 			}
+
+			if (IsObstacle(Center, Curr) || IsFloor(Center, Curr))
+			{
+				CachedTiles.Add(Curr);
+			}
+			if (IsObstacle(Center, Prev) && IsFloor(Center, Curr))
+			{
+				// TopVector 기울기 감소
+			}
+			if (IsFloor(Center, Prev) && IsObstacle(Center, Curr))
+			{
+				// Get next column
+				FColumnPortion NextColumnPortion = ColumnPortion.Next();
+				
+				// next column BottomVector 기울기 증가
+
+				// Enqueue next column
+				Columns.Enqueue(NextColumnPortion);
+			}
+			Prev = Curr;
+		}
+		if (IsFloor(Center, Prev))
+		{
+			Columns.Enqueue(ColumnPortion.Next());
 		}
 	}
 }
 
-bool AFogManager::IsCircle(const FIntPoint& Center, const FIntPoint& Tile, const int Radius)
+bool AFogManager::IsObstacle(const FIntPoint& Center, const FIntPoint& Tile) const
+{
+	const FTile* CenterData = TopDownGrid->TileData.Find(Center);
+	const FTile* TileData = TopDownGrid->TileData.Find(Tile);
+
+	if (CenterData == nullptr || TileData == nullptr)
+	{
+		return false;
+	}
+
+	if (TileData->Height > CenterData->Height)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool AFogManager::IsFloor(const FIntPoint& Center, const FIntPoint& Tile) const
+{
+	const FTile* CenterData = TopDownGrid->TileData.Find(Center);
+	const FTile* TileData = TopDownGrid->TileData.Find(Tile);
+
+	if (CenterData == nullptr || TileData == nullptr)
+	{
+		return false;
+	}
+
+	if (TileData->Height <= CenterData->Height)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool AFogManager::IsSymmetric(const int Column, const FIntPoint& Tile, const FIntPoint& TopVector, const FIntPoint& BottomVector) const
+{
+	return false;
+}
+
+bool AFogManager::IsCircle(const FIntPoint& Center, const FIntPoint& Tile, const int Radius) const
 {
 	int DistX = Tile.X - Center.X;
 	int DistY = Tile.Y - Center.Y;
@@ -298,7 +376,7 @@ void AFogManager::DrawDebugTile(float Duration)
 		{
 			FVector Location = Tile->WorldLocation;
 			Location.Z += 1.0f;
-			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.95f, FColor::Black, false, Duration);
+			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.95f, FColor::Green, false, Duration);
 		}
 	}
 }
