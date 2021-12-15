@@ -101,20 +101,25 @@ void AFogManager::UpdateFogAgents()
 		{
 			continue;
 		}
-		GetCircleQuadrantZero(AgentCoords, Agent->Sight);
+		// Get circle tiles
+		CircleTiles.Reset(CircleTiles.GetSlack());
+		GetBresenhamCircle(AgentCoords, Agent->Sight);
+
+		// Classify tiles
+		UpdateCachedTiles(AgentCoords);
 	}
 }
 
-void AFogManager::GetBresenhamCircle(const FIntPoint& Center, int Radius, int AgentHeight)
+void AFogManager::GetBresenhamCircle(const FIntPoint& Center, int Radius)
 {
 	int X = 0;
 	int Y = Radius;
 	int D = 1 - Radius; // Discriminant
 
-	CachedTiles.AddUnique(Center + FIntPoint{  X,  Y });
-	CachedTiles.AddUnique(Center + FIntPoint{  X, -Y });
-	CachedTiles.AddUnique(Center + FIntPoint{  Y,  X });
-	CachedTiles.AddUnique(Center + FIntPoint{ -Y,  X });
+	CircleTiles.AddUnique(Center + FIntPoint{  X,  Y });
+	CircleTiles.AddUnique(Center + FIntPoint{  X, -Y });
+	CircleTiles.AddUnique(Center + FIntPoint{  Y,  X });
+	CircleTiles.AddUnique(Center + FIntPoint{ -Y,  X });
 
 	for (X = 1; X < Y; ++X)
 	{
@@ -129,36 +134,37 @@ void AFogManager::GetBresenhamCircle(const FIntPoint& Center, int Radius, int Ag
 
 			for (int i = 0; i < X; ++i)
 			{
-				CachedTiles.AddUnique(Center + FIntPoint{  i,  Y });
-				CachedTiles.AddUnique(Center + FIntPoint{ -i,  Y });
-				CachedTiles.AddUnique(Center + FIntPoint{  i, -Y });
-				CachedTiles.AddUnique(Center + FIntPoint{ -i, -Y });
-				CachedTiles.AddUnique(Center + FIntPoint{  Y,  i });
-				CachedTiles.AddUnique(Center + FIntPoint{ -Y,  i });
-				CachedTiles.AddUnique(Center + FIntPoint{  Y, -i });
-				CachedTiles.AddUnique(Center + FIntPoint{ -Y, -i });
+				CircleTiles.AddUnique(Center + FIntPoint{  i,  Y });
+				CircleTiles.AddUnique(Center + FIntPoint{ -i,  Y });
+				CircleTiles.AddUnique(Center + FIntPoint{  i, -Y });
+				CircleTiles.AddUnique(Center + FIntPoint{ -i, -Y });
+				CircleTiles.AddUnique(Center + FIntPoint{  Y,  i });
+				CircleTiles.AddUnique(Center + FIntPoint{ -Y,  i });
+				CircleTiles.AddUnique(Center + FIntPoint{  Y, -i });
+				CircleTiles.AddUnique(Center + FIntPoint{ -Y, -i });
 			}
 		}
-		CachedTiles.AddUnique(Center + FIntPoint{  X,  Y });
-		CachedTiles.AddUnique(Center + FIntPoint{ -X,  Y });
-		CachedTiles.AddUnique(Center + FIntPoint{  X, -Y });
-		CachedTiles.AddUnique(Center + FIntPoint{ -X, -Y });
-		CachedTiles.AddUnique(Center + FIntPoint{  Y,  X });
-		CachedTiles.AddUnique(Center + FIntPoint{ -Y,  X });
-		CachedTiles.AddUnique(Center + FIntPoint{  Y, -X });
-		CachedTiles.AddUnique(Center + FIntPoint{ -Y, -X });
+		CircleTiles.AddUnique(Center + FIntPoint{  X,  Y });
+		CircleTiles.AddUnique(Center + FIntPoint{ -X,  Y });
+		CircleTiles.AddUnique(Center + FIntPoint{  X, -Y });
+		CircleTiles.AddUnique(Center + FIntPoint{ -X, -Y });
+		CircleTiles.AddUnique(Center + FIntPoint{  Y,  X });
+		CircleTiles.AddUnique(Center + FIntPoint{ -Y,  X });
+		CircleTiles.AddUnique(Center + FIntPoint{  Y, -X });
+		CircleTiles.AddUnique(Center + FIntPoint{ -Y, -X });
 	}
 
-	for (int i = Center.X - X + 1; i < Center.X + X; ++i)
+	// 나머지 사각형 부분
+	/*for (int i = Center.X - X + 1; i < Center.X + X; ++i)
 	{
 		for (int j = Center.Y - Y + 1; j < Center.Y + Y; ++j)
 		{
-			CachedTiles.AddUnique(FIntPoint{ i, j });
+			CircleTiles.AddUnique(FIntPoint{ i, j });
 		}
-	}
+	}*/
 }
 
-void AFogManager::GetBresenhamLine(const FIntPoint& Start, const FIntPoint& End)
+void AFogManager::CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End)
 {
 	int X = Start.X;
 	int Y = Start.Y;
@@ -169,197 +175,78 @@ void AFogManager::GetBresenhamLine(const FIntPoint& Start, const FIntPoint& End)
 	int XIncreasement = (End.X < Start.X) ? -1 : 1;
 	int YIncreasement = (End.Y < Start.Y) ? -1 : 1;
 
+	auto TileData = TopDownGrid->TileData;
+	FTile* CenterTile = TileData.Find(Start);
+	if (CenterTile == nullptr)
+	{
+		return;
+	}
+	FTile* Tile = nullptr;
+
 	if (DeltaY < DeltaX)
 	{
-		int Discriminant = 2 * (DeltaY - DeltaX);
+		int D = 2 * (DeltaY - DeltaX);
 
 		for (; (Start.X < End.X ? X < End.X : X > End.X); X += XIncreasement)
 		{
-			if (0 >= Discriminant)
+			if (0 >= D)
 			{
-				Discriminant += 2 * DeltaY;
+				D += 2 * DeltaY;
 			}
 			else
 			{
-				Discriminant += 2 * (DeltaY - DeltaX);
+				D += 2 * DeltaY - 2 * DeltaX;
 				Y += YIncreasement;
 			}
 			// Add tile coords
-		}
-	}
-	else
-	{
-		int Discriminant = 2 * (DeltaX - DeltaY);
-
-		for (; (Start.Y < End.Y ? Y < End.Y : Y > End.Y); Y += YIncreasement)
-		{
-			if (0 >= Discriminant)
-			{
-				Discriminant += 2 * DeltaX;
-			}
-			else
-			{
-				Discriminant += 2 * (DeltaX - DeltaY);
-				X += XIncreasement;
-			}
-			// Add tile coords
-		}
-	}
-}
-
-void AFogManager::GetCircleArea(const FIntPoint& Center, int Radius)
-{
-	// 1. Center를 기준으로 Extent가 Radius인 사각형 타일을 구한다.
-	// 2. for X in 사각형 :
-	// 2-1. 왼쪽 타일부터 Center와의 거리 D를 계산한다.
-	// 2-2. D <= Radius면 멈추고 멈춘 위치 L을 저장한다.
-	// 2-3. 오른쪽 타일부터 Center와의 거리 D를 계산한다.
-	// 2-4. D <= Radius면 멈추고 멈춘 위치 R을 저장한다.
-	// 2-5. (X, L)부터 (X, R)까지의 타일이 원에 해당하는 타일이다.
-
-	// ^ X-Axis
-	// |
-	// |
-	// |- - - > Y-Axis
-	const int Left = Center.Y - Radius + 1;		
-	const int Right = Center.Y + Radius - 1;	
-	const int Top = Center.X + Radius - 1;		
-	const int Bottom = Center.X - Radius + 1;	
-
-	const float RadiuSquared = Radius * Radius /* 원이 부드럽게 그려지도록 값을 살짝 줄인다. */ * 0.95f;
-	
-	for (int X = Bottom; X <= Top; ++X)
-	{
-		int LeftY = Left;
-		
-		float Dist = (X - Center.X) * (X - Center.X) + (LeftY - Center.Y) * (LeftY - Center.Y);
-		while (Dist > RadiuSquared)
-		{
-			++LeftY;
-			Dist = (X - Center.X) * (X - Center.X) + (LeftY - Center.Y) * (LeftY - Center.Y);
-		}
-		
-		int RightY = Right;
-		Dist = FVector2D::DistSquared(Center, FIntPoint{ X, RightY });
-		while (Dist > RadiuSquared)
-		{
-			--RightY;
-			Dist = FVector2D::DistSquared(Center, FIntPoint{ X, RightY });
-		}
-
-		for (int i = LeftY; i <= RightY; ++i)
-		{
-			// Add tile coords
-			CachedTiles.Add({ X, i });
-		}
-	}
-}
-
-void AFogManager::GetCircleQuadrantZero(const FIntPoint& Center, const int Radius)
-{
-	TQueue<FColumnPortion> Columns;
-
-	FIntPoint TopVector = { Center.X + Radius, Center.Y };
-	FIntPoint BottomVector = { Center.X, Center.Y + Radius };
-	Columns.Enqueue({ Center.Y, TopVector, BottomVector });
-
-	while (Columns.IsEmpty() == false)
-	{
-		FColumnPortion ColumnPortion = {};
-		Columns.Dequeue(ColumnPortion);
-		FIntPoint Prev = { TNumericLimits<int32>::Max(), TNumericLimits<int32>::Max() };
-
-		for (int X = ColumnPortion.TopVector.X; X >= ColumnPortion.BottomVector.X; --X)
-		{
-			FIntPoint Curr = { X, ColumnPortion.Column };
-
-			if (IsCircle(Center, Curr, Radius) == false)
+			Tile = TileData.Find({ X, Y });
+			if (Tile == nullptr)
 			{
 				continue;
 			}
-
-			if (IsObstacle(Center, Curr) || IsFloor(Center, Curr))
+			if (CenterTile->Height < Tile->Height)
 			{
-				CachedTiles.Add(Curr);
+				break;
 			}
-			if (IsObstacle(Center, Prev) && IsFloor(Center, Curr))
-			{
-				// TopVector 기울기 감소
-			}
-			if (IsFloor(Center, Prev) && IsObstacle(Center, Curr))
-			{
-				// Get next column
-				FColumnPortion NextColumnPortion = ColumnPortion.Next();
-				
-				// next column BottomVector 기울기 증가
-
-				// Enqueue next column
-				Columns.Enqueue(NextColumnPortion);
-			}
-			Prev = Curr;
+			CachedTiles.AddUnique({ X,Y });
 		}
-		if (IsFloor(Center, Prev))
+	}
+	else
+	{
+		int D = 2 * (DeltaX - DeltaY);
+
+		for (; (Start.Y < End.Y ? Y < End.Y : Y > End.Y); Y += YIncreasement)
 		{
-			Columns.Enqueue(ColumnPortion.Next());
+			if (0 >= D)
+			{
+				D += 2 * DeltaX;
+			}
+			else
+			{
+				D += 2 * (DeltaX - DeltaY);
+				X += XIncreasement;
+			}
+			// Add tile coords
+			Tile = TileData.Find({ X, Y });
+			if (Tile == nullptr)
+			{
+				continue;
+			}
+			if (CenterTile->Height < Tile->Height)
+			{
+				break;
+			}
+			CachedTiles.AddUnique({ X,Y });
 		}
 	}
 }
 
-bool AFogManager::IsObstacle(const FIntPoint& Center, const FIntPoint& Tile) const
+void AFogManager::UpdateCachedTiles(const FIntPoint& Center)
 {
-	const FTile* CenterData = TopDownGrid->TileData.Find(Center);
-	const FTile* TileData = TopDownGrid->TileData.Find(Tile);
-
-	if (CenterData == nullptr || TileData == nullptr)
+	for (auto& Target : CircleTiles)
 	{
-		return false;
+		CastBresenhamLine(Center, Target);
 	}
-
-	if (TileData->Height > CenterData->Height)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool AFogManager::IsFloor(const FIntPoint& Center, const FIntPoint& Tile) const
-{
-	const FTile* CenterData = TopDownGrid->TileData.Find(Center);
-	const FTile* TileData = TopDownGrid->TileData.Find(Tile);
-
-	if (CenterData == nullptr || TileData == nullptr)
-	{
-		return false;
-	}
-
-	if (TileData->Height <= CenterData->Height)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool AFogManager::IsSymmetric(const int Column, const FIntPoint& Tile, const FIntPoint& TopVector, const FIntPoint& BottomVector) const
-{
-	return false;
-}
-
-bool AFogManager::IsCircle(const FIntPoint& Center, const FIntPoint& Tile, const int Radius) const
-{
-	int DistX = Tile.X - Center.X;
-	int DistY = Tile.Y - Center.Y;
-
-	int SqrR = FMath::Square<int>(Radius)/* * 0.95 */;
-	int SqrDx = FMath::Square<int>(DistX);
-	int SqrDy = FMath::Square<int>(DistY);
-
-	return SqrDx + SqrDy < SqrR;
 }
 
 void AFogManager::DrawDebugTile(float Duration)
@@ -376,7 +263,7 @@ void AFogManager::DrawDebugTile(float Duration)
 		{
 			FVector Location = Tile->WorldLocation;
 			Location.Z += 1.0f;
-			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.95f, FColor::Green, false, Duration);
+			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.95f, FColor::Silver, false, Duration);
 		}
 	}
 }
