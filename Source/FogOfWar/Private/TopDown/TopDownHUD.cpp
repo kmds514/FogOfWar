@@ -4,9 +4,13 @@
 #include "TopDown/TopDownHUD.h"
 #include "TopDown/TopDownPlayerController.h"
 
-void ATopDownHUD::DrawRectNoFill(const FVector2D& LeftTop, const FVector2D& RightBottom, const FLinearColor& Color)
+bool ATopDownHUD::DrawRectNoFill(const FVector2D& LeftTop, const FVector2D& RightBottom, const FLinearColor& Color, float LineThickness)
 {
-	float LineThickness = FVector2D::DistSquared(LeftTop, RightBottom) > 20.0f * 20.0f ? 1.5f : 0.001f;
+	// 사각형이 너무 작으면 그리지 않습니다.
+	if (FVector2D::DistSquared(LeftTop, RightBottom) <= 20.0f * 20.0f)
+	{
+		return false;
+	}
 
 	// LeftTop to RightTop
 	DrawLine(LeftTop.X, LeftTop.Y, RightBottom.X, LeftTop.Y, Color, LineThickness);
@@ -19,4 +23,6 @@ void ATopDownHUD::DrawRectNoFill(const FVector2D& LeftTop, const FVector2D& Righ
 
 	// LeftBottom to LeftTop
 	DrawLine(LeftTop.X, RightBottom.Y, LeftTop.X, LeftTop.Y, Color, LineThickness);
+
+	return true;
 }
