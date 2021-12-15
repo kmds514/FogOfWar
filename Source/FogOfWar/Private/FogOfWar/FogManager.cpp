@@ -101,9 +101,14 @@ void AFogManager::UpdateFogAgents()
 		{
 			continue;
 		}
-		// Get circle tiles
+
 		CircleTiles.Reset(CircleTiles.GetSlack());
+
+		// Get circle tiles
 		GetBresenhamCircle(AgentCoords, Agent->Sight);
+
+		// 레이캐스트 정확도를 위해 기존 시야보다 작은 원을 하나 더 그립니다.
+		GetBresenhamCircle(AgentCoords, Agent->Sight - 1);
 
 		// Classify tiles
 		UpdateCachedTiles(AgentCoords);
@@ -112,18 +117,23 @@ void AFogManager::UpdateFogAgents()
 
 void AFogManager::GetBresenhamCircle(const FIntPoint& Center, int Radius)
 {
+	if (Radius == 0)
+	{
+		return;
+	}
+
 	int X = 0;
 	int Y = Radius;
 	int D = 1 - Radius; // Discriminant
 
-	CircleTiles.AddUnique(Center + FIntPoint{  X,  Y });
-	CircleTiles.AddUnique(Center + FIntPoint{  X, -Y });
-	CircleTiles.AddUnique(Center + FIntPoint{  Y,  X });
-	CircleTiles.AddUnique(Center + FIntPoint{ -Y,  X });
+	CircleTiles.Add(Center + FIntPoint{  X,  Y });
+	CircleTiles.Add(Center + FIntPoint{  X, -Y });
+	CircleTiles.Add(Center + FIntPoint{  Y,  X });
+	CircleTiles.Add(Center + FIntPoint{ -Y,  X });
 
 	for (X = 1; X < Y; ++X)
 	{
-		if (D < 0)
+		if (D <= 0)
 		{
 			D += 2 * X + 1;
 		}
@@ -132,26 +142,26 @@ void AFogManager::GetBresenhamCircle(const FIntPoint& Center, int Radius)
 			D += 2 * X + 1 - 2 * Y;
 			--Y;
 
-			for (int i = 0; i < X; ++i)
+			/*for (int i = 0; i < X; ++i)
 			{
-				CircleTiles.AddUnique(Center + FIntPoint{  i,  Y });
-				CircleTiles.AddUnique(Center + FIntPoint{ -i,  Y });
-				CircleTiles.AddUnique(Center + FIntPoint{  i, -Y });
-				CircleTiles.AddUnique(Center + FIntPoint{ -i, -Y });
-				CircleTiles.AddUnique(Center + FIntPoint{  Y,  i });
-				CircleTiles.AddUnique(Center + FIntPoint{ -Y,  i });
-				CircleTiles.AddUnique(Center + FIntPoint{  Y, -i });
-				CircleTiles.AddUnique(Center + FIntPoint{ -Y, -i });
-			}
+				CircleTiles.Add(Center + FIntPoint{  i,  Y });
+				CircleTiles.Add(Center + FIntPoint{ -i,  Y });
+				CircleTiles.Add(Center + FIntPoint{  i, -Y });
+				CircleTiles.Add(Center + FIntPoint{ -i, -Y });
+				CircleTiles.Add(Center + FIntPoint{  Y,  i });
+				CircleTiles.Add(Center + FIntPoint{ -Y,  i });
+				CircleTiles.Add(Center + FIntPoint{  Y, -i });
+				CircleTiles.Add(Center + FIntPoint{ -Y, -i });
+			}*/
 		}
-		CircleTiles.AddUnique(Center + FIntPoint{  X,  Y });
-		CircleTiles.AddUnique(Center + FIntPoint{ -X,  Y });
-		CircleTiles.AddUnique(Center + FIntPoint{  X, -Y });
-		CircleTiles.AddUnique(Center + FIntPoint{ -X, -Y });
-		CircleTiles.AddUnique(Center + FIntPoint{  Y,  X });
-		CircleTiles.AddUnique(Center + FIntPoint{ -Y,  X });
-		CircleTiles.AddUnique(Center + FIntPoint{  Y, -X });
-		CircleTiles.AddUnique(Center + FIntPoint{ -Y, -X });
+		CircleTiles.Add(Center + FIntPoint{  X,  Y });
+		CircleTiles.Add(Center + FIntPoint{ -X,  Y });
+		CircleTiles.Add(Center + FIntPoint{  X, -Y });
+		CircleTiles.Add(Center + FIntPoint{ -X, -Y });
+		CircleTiles.Add(Center + FIntPoint{  Y,  X });
+		CircleTiles.Add(Center + FIntPoint{ -Y,  X });
+		CircleTiles.Add(Center + FIntPoint{  Y, -X });
+		CircleTiles.Add(Center + FIntPoint{ -Y, -X });
 	}
 
 	// 나머지 사각형 부분
@@ -263,7 +273,7 @@ void AFogManager::DrawDebugTile(float Duration)
 		{
 			FVector Location = Tile->WorldLocation;
 			Location.Z += 1.0f;
-			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.95f, FColor::Silver, false, Duration);
+			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.5f, FColor::Silver, false, Duration);
 		}
 	}
 }

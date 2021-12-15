@@ -62,25 +62,14 @@ public:
 	UPROPERTY(Category = "Top Down Grid", BlueprintReadOnly)
 	TMap<FIntPoint, FTile> TileData;
 
-protected:
-	UPROPERTY(Category = "Top Down Grid", BlueprintReadOnly)
-	FTransform GridTransform;
-
-	UPROPERTY(Category = "Top Down Grid", BlueprintReadOnly)
-	FVector TileExtent;
-
 private:
-	UFUNCTION()
 	void UpdateGridTransform();
 
 	/** @return returns blocking hit */
-	UFUNCTION()
 	bool CoordsLineTraceToMinusZAxis(const FIntPoint& Coords, ETraceTypeQuery TraceChannel, FHitResult& OutHit);
 
-	UFUNCTION()
 	void GenerateTileData();
 
-	UFUNCTION()
 	void DrawDebugGrid();
 
 	UPROPERTY(Category = "Config", EditAnywhere)
@@ -89,11 +78,11 @@ private:
 	UPROPERTY(Category = "Config", EditAnywhere)
 	bool bDebugLineTrace = false;
 
-	/** Number of tiles and Number of fog texel. Tile extent = GridVolumeExtentXY / GridResoulution */
+	/** Number of tiles and Number of fog texel. 
+	* Tile extent = GridVolumeExtentXY / GridResoulution */
 	UPROPERTY(Category = "Config", EditAnywhere, meta = (ClampMin = 4, ClampMax = 256, UIMin = 4, UIMax = 256))
 	int GridResolution = 128;
 
-	/** Grid extent. Tile extent = GridVolumeExtentXY / GridResoulution */
 	UPROPERTY(Category = "Config", EditAnywhere)
 	int GridVolumeExtentXY = 1024;
 
@@ -106,7 +95,10 @@ private:
 	UPROPERTY(Category = "Top Down Grid", VisibleAnywhere)
 	class UBoxComponent* GridVolume = nullptr;
 
+	FTransform GridTransform;
+	
 	/** 그리드 좌표의 최솟값을 (0, 0)으로 하기 위한 조정값 */
-	UPROPERTY()
 	int GridShift = 64;
+
+	FVector TileExtent;
 };

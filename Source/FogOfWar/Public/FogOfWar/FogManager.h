@@ -30,8 +30,10 @@ public:
 	void RemoveFogAgent(UFogAgentComponent* const FogAgent);
 	void UpdateFogAgents();
 
+	/** https://en.wikipedia.org/wiki/Midpoint_circle_algorithm */
 	void GetBresenhamCircle(const FIntPoint& Center, int Radius);
 
+	/** https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm */
 	void CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End);
 
 protected:
