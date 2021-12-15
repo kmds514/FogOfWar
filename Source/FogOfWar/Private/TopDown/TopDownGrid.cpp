@@ -7,7 +7,11 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
 
-#define ECC_Terrain ECC_GameTraceChannel1
+#define ECC_Lowest ECC_GameTraceChannel2
+#define ECC_Low ECC_GameTraceChannel3
+#define ECC_Medium ECC_GameTraceChannel4
+#define ECC_High ECC_GameTraceChannel5
+#define ECC_Highest ECC_GameTraceChannel6
 
 // Sets default values
 ATopDownGrid::ATopDownGrid()
@@ -39,9 +43,18 @@ void ATopDownGrid::OnConstruction(const FTransform& Transform)
 	}
 }
 
+void ATopDownGrid::BeginPlay()
+{
+	Super::BeginPlay();
+
+	UpdateGridTransform();
+
+	GenerateTileData();
+}
+
 void ATopDownGrid::UpdateGridTransform()
 {
-	GridResolution = FMath::Clamp<int>(FMath::RoundUpToPowerOfTwo(GridResolution), 4, 512);
+	GridResolution = FMath::Clamp<int>(FMath::RoundUpToPowerOfTwo(GridResolution), 4, 256);
 	GridShift = GridResolution / 2;
 
 	GridVolume->SetBoxExtent(FVector(GridVolumeExtentXY, GridVolumeExtentXY, GridVolumeExtentZ));
@@ -66,7 +79,7 @@ FIntPoint ATopDownGrid::WorldToGrid(const FVector& WorldLocation) const
 	return { X, Y };
 }
 
-bool ATopDownGrid::CoordsLineTraceToMinusZAxis(const FIntPoint& Coords, FHitResult& OutHit)
+bool ATopDownGrid::CoordsLineTraceToMinusZAxis(const FIntPoint& Coords, ETraceTypeQuery TraceChannel, FHitResult& OutHit)
 {
 	FVector Start = FVector::ZeroVector;
 	FVector End = FVector::ZeroVector;
@@ -86,7 +99,6 @@ bool ATopDownGrid::CoordsLineTraceToMinusZAxis(const FIntPoint& Coords, FHitResu
 	End.Y = Start.Y; 
 	End.Z = GridVolume->GetComponentLocation().Z - GridVolumeExtentZ;
 
-	auto TraceChannel = UEngineTypes::ConvertToTraceType(ECC_Terrain);
 	auto DrawDebugType = bDebugLineTrace ? EDrawDebugTrace::Persistent : EDrawDebugTrace::None;
 	UKismetSystemLibrary::LineTraceSingle(GetWorld(), Start, End, TraceChannel, false, TArray<AActor*>(), DrawDebugType, OutHit, true);
 
@@ -102,11 +114,51 @@ void ATopDownGrid::GenerateTileData()
 		for (int j = 0; j < GridResolution; j++)
 		{
 			FHitResult OutHit = {};
-			if (CoordsLineTraceToMinusZAxis({ i, j }, OutHit))
+			if (CoordsLineTraceToMinusZAxis({ i, j }, UEngineTypes::ConvertToTraceType(ECC_Lowest), OutHit))
 			{
 				FTile Tile = {};
 				Tile.WorldLocation = OutHit.ImpactPoint;
-				Tile.Height = FMath::FloorToInt(Tile.WorldLocation.Z / static_cast<float>(HeightDivisor));
+				Tile.Height = ETileHeight::Lowest;
+				Tile.bVisible = false;
+				Tile.bCanTravel = true;
+
+				TileData.Add(FIntPoint{ i, j }, Tile);
+			}
+			if (CoordsLineTraceToMinusZAxis({ i, j }, UEngineTypes::ConvertToTraceType(ECC_Low), OutHit))
+			{
+				FTile Tile = {};
+				Tile.WorldLocation = OutHit.ImpactPoint;
+				Tile.Height = ETileHeight::Low;
+				Tile.bVisible = false;
+				Tile.bCanTravel = true;
+
+				TileData.Add(FIntPoint{ i, j }, Tile);
+			}
+			if (CoordsLineTraceToMinusZAxis({ i, j }, UEngineTypes::ConvertToTraceType(ECC_Medium), OutHit))
+			{
+				FTile Tile = {};
+				Tile.WorldLocation = OutHit.ImpactPoint;
+				Tile.Height = ETileHeight::Medium;
+				Tile.bVisible = false;
+				Tile.bCanTravel = true;
+
+				TileData.Add(FIntPoint{ i, j }, Tile);
+			}
+			if (CoordsLineTraceToMinusZAxis({ i, j }, UEngineTypes::ConvertToTraceType(ECC_High), OutHit))
+			{
+				FTile Tile = {};
+				Tile.WorldLocation = OutHit.ImpactPoint;
+				Tile.Height = ETileHeight::High;
+				Tile.bVisible = false;
+				Tile.bCanTravel = true;
+
+				TileData.Add(FIntPoint{ i, j }, Tile);
+			}
+			if (CoordsLineTraceToMinusZAxis({ i, j }, UEngineTypes::ConvertToTraceType(ECC_Highest), OutHit))
+			{
+				FTile Tile = {};
+				Tile.WorldLocation = OutHit.ImpactPoint;
+				Tile.Height = ETileHeight::Highest;
 				Tile.bVisible = false;
 				Tile.bCanTravel = true;
 

@@ -6,6 +6,17 @@
 #include "GameFramework/Actor.h"
 #include "TopDownGrid.generated.h"
 
+UENUM(BlueprintType)
+enum class ETileHeight : uint8
+{
+	INVALID = 0,
+	Lowest,
+	Low,
+	Medium,
+	High,
+	Highest
+};
+
 USTRUCT(Atomic, BlueprintType)
 struct FTile
 {
@@ -16,7 +27,7 @@ public:
 	FVector WorldLocation;
 
 	UPROPERTY(BlueprintReadWrite)
-	int Height;
+	ETileHeight Height;
 
 	UPROPERTY(BlueprintReadWrite)
 	bool bVisible = false;
@@ -36,6 +47,9 @@ public:
 
 	/** Called when an instance of this class is placed (in editor) or spawned */
 	virtual void OnConstruction(const FTransform& Transform) override;
+
+protected:
+	virtual void BeginPlay() override;
 
 public:
 	/** @return Returns grid coords index */
@@ -61,7 +75,7 @@ private:
 
 	/** @return returns blocking hit */
 	UFUNCTION()
-	bool CoordsLineTraceToMinusZAxis(const FIntPoint& Coords, FHitResult& OutHit);
+	bool CoordsLineTraceToMinusZAxis(const FIntPoint& Coords, ETraceTypeQuery TraceChannel, FHitResult& OutHit);
 
 	UFUNCTION()
 	void GenerateTileData();
@@ -75,19 +89,18 @@ private:
 	UPROPERTY(Category = "Config", EditAnywhere)
 	bool bDebugLineTrace = false;
 
-	UPROPERTY(Category = "Config", EditAnywhere, meta = (ClampMin = 4, ClampMax = 512, UIMin = 4, UIMax = 512))
+	/** Number of tiles and Number of fog texel. Tile extent = GridVolumeExtentXY / GridResoulution */
+	UPROPERTY(Category = "Config", EditAnywhere, meta = (ClampMin = 4, ClampMax = 256, UIMin = 4, UIMax = 256))
 	int GridResolution = 128;
 
+	/** Grid extent. Tile extent = GridVolumeExtentXY / GridResoulution */
 	UPROPERTY(Category = "Config", EditAnywhere)
 	int GridVolumeExtentXY = 1024;
 
 	UPROPERTY(Category = "Config", EditAnywhere)
 	int GridVolumeExtentZ = 1024;
 
-	UPROPERTY(Category = "Config", EditAnywhere, meta = (ClampMin = 10, ClampMax = 1000, UIMin = 10, UIMax = 1000))
-	int HeightDivisor = 200.0f;
-
-	UPROPERTY(Category = "Top Down Grid", VisibleAnywhere)
+	UPROPERTY(Category = "Top Down Grid", VisibleDefaultsOnly)
 	class UBillboardComponent* Billboard = nullptr;
 
 	UPROPERTY(Category = "Top Down Grid", VisibleAnywhere)
