@@ -15,6 +15,10 @@ public:
 	// Sets default values for this pawn's properties
 	ATopDownCamera();
 
+protected:
+	virtual void BeginPlay() override;
+
+public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	void OnMoveForward(float Value);
@@ -55,17 +59,17 @@ protected:
 	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "45.0", ClampMax = "85.0", UIMin = "45.0", UIMax = "85.0"))
 	float MaxPitch = 65.0f;
 
-	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "400.0", ClampMax = "1600.0", UIMin = "400.0", UIMax = "1600.0"))
+	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "400.0", ClampMax = "2000.0", UIMin = "400.0", UIMax = "2000.0"))
 	float MinSpeed = 1000.0f;
 
-	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "1000.0", ClampMax = "3000.0", UIMin = "1000.0", UIMax = "3000.0"))
-	float MaxSpeed = 2000.0f;
+	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "2000.0", ClampMax = "4000.0", UIMin = "2000.0", UIMax = "4000.0"))
+	float MaxSpeed = 3000.0f;
 
 	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "0.0", ClampMax = "20.0", UIMin = "0.0", UIMax = "20.0"))
 	float InterpSpeed = 10.0f;
 
 	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "2", ClampMax = "16", UIMin = "2", UIMax = "16"))
-	int NumberOfZoomLevel = 6;
+	int NumberOfZoomLevel = 5;
 
 private:
 	float TargetDistance = 0.0f;

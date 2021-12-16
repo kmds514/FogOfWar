@@ -24,6 +24,11 @@ ATopDownCamera::ATopDownCamera()
 	Camera->SetupAttachment(Handle);
 
 	Movement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("FloatingPawnMovement"));
+}
+
+void ATopDownCamera::BeginPlay()
+{
+	Super::BeginPlay();
 
 	TargetDistance = MaxDistance;
 	TargetFOV = MinFOV;
