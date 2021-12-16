@@ -52,6 +52,11 @@ void ATopDownGrid::BeginPlay()
 	GenerateTileData();
 }
 
+int ATopDownGrid::ConvertToGridUnit(const int N) const
+{
+	return N / GridTransform.GetScale3D().X;
+}
+
 void ATopDownGrid::UpdateGridTransform()
 {
 	GridResolution = FMath::Clamp<int>(FMath::RoundUpToPowerOfTwo(GridResolution), 4, 256);
@@ -173,6 +178,11 @@ FVector ATopDownGrid::GetTileExtent() const
 	return TileExtent;
 }
 
+int ATopDownGrid::GetGridResolution() const
+{
+	return GridResolution;
+}
+
 void ATopDownGrid::DrawDebugGrid()
 {
 	if (bDebugGrid == false)
@@ -185,6 +195,6 @@ void ATopDownGrid::DrawDebugGrid()
 		FVector Location = Tile.Value.WorldLocation;
 		Location.Z += 1.0f;
 
-		DrawDebugBox(GetWorld(), Location, TileExtent * 0.95f, FColor::Green, true);
+		DrawDebugBox(GetWorld(), Location, TileExtent * 0.8f, FColor::Green, true);
 	}
 }

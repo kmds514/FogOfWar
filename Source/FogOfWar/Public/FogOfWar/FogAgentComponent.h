@@ -22,8 +22,9 @@ public:
 	UFUNCTION(Category = "Fog Agent", BlueprintPure)
 	FVector GetFogAgentLocation() const;
 
-	UPROPERTY(Category = "Fog Agent", EditAnywhere, BlueprintReadWrite)
-	int Sight = 10;
+	/** In centimeters */
+	UPROPERTY(Category = "Fog Agent", EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "0", ClampMax = "2000", UIMin = "0", UIMax = "2000"))
+	int Sight = 800;
 
 private:
 	UPROPERTY()

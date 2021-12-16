@@ -34,6 +34,25 @@ void AFogManager::BeginPlay()
 		GetName(Name);
 		UE_LOG(LogTemp, Error, TEXT("%s: TopDownGrid must exist only one instance in world. Current instance is %d "), *Name, OutActors.Num());
 	}
+
+	GetWorldTimerManager().SetTimer(FogTimer, this, &AFogManager::UpdateFogAgents, 0.1f, true, 1.0f);
+
+	BufferSize = TopDownGrid->GetGridResolution();
+
+	FogBuffer = new uint8[BufferSize * BufferSize];
+	FogBufferSize = BufferSize * BufferSize * sizeof(uint8);
+	FMemory::Memset(FogBuffer, 0x00, FogBufferSize);
+}
+
+void AFogManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	if (FogBuffer)
+	{
+		delete[] FogBuffer;
+		FogBuffer = nullptr;
+	}
 }
 
 // Called every frame
@@ -41,7 +60,7 @@ void AFogManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	UpdateFogAgents();
+	//UpdateFogAgents();
 
 	if (bDebugTile)
 	{
@@ -96,6 +115,7 @@ void AFogManager::UpdateFogAgents()
 			continue;
 		}
 		const FIntPoint& AgentCoords = TopDownGrid->WorldToGrid(Agent->GetFogAgentLocation());
+		const int Radius = TopDownGrid->ConvertToGridUnit(Agent->Sight);
 		const FTile* AgentTile = TopDownGrid->TileData.Find(AgentCoords);
 		if (AgentTile == nullptr)
 		{
@@ -105,10 +125,10 @@ void AFogManager::UpdateFogAgents()
 		CircleTiles.Reset(CircleTiles.GetSlack());
 
 		// Get circle tiles
-		GetBresenhamCircle(AgentCoords, Agent->Sight);
+		GetBresenhamCircle(AgentCoords, Radius);
 
 		// 레이캐스트 정확도를 위해 기존 시야보다 작은 원을 하나 더 그립니다.
-		GetBresenhamCircle(AgentCoords, Agent->Sight - 1);
+		GetBresenhamCircle(AgentCoords, Radius - 1);
 
 		// Classify tiles
 		UpdateCachedTiles(AgentCoords);
@@ -130,6 +150,12 @@ void AFogManager::GetBresenhamCircle(const FIntPoint& Center, int Radius)
 	CircleTiles.Add(Center + FIntPoint{  X, -Y });
 	CircleTiles.Add(Center + FIntPoint{  Y,  X });
 	CircleTiles.Add(Center + FIntPoint{ -Y,  X });
+
+	// test
+	auto Index = Center + FIntPoint{ X,Y };
+	FogBuffer[Index.X * BufferSize + Index.Y] = 0xFF;
+	Index = Center + FIntPoint{ X,-Y };
+	FogBuffer[Index.X * BufferSize + Index.Y] = 0xFF;
 
 	for (X = 1; X < Y; ++X)
 	{
@@ -273,7 +299,7 @@ void AFogManager::DrawDebugTile(float Duration)
 		{
 			FVector Location = Tile->WorldLocation;
 			Location.Z += 1.0f;
-			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.5f, FColor::Silver, false, Duration);
+			DrawDebugBox(GetWorld(), Location, TopDownGrid->GetTileExtent() * 0.6f, FColor::Silver, false, Duration);
 		}
 	}
 }

@@ -21,6 +21,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:	
 	// Called every frame
@@ -37,9 +38,6 @@ public:
 	void CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End);
 
 protected:
-	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadWrite)
-	bool bDebugTile = false;
-
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	class ATopDownGrid* TopDownGrid = nullptr;
 
@@ -49,11 +47,20 @@ protected:
 	UPROPERTY()
 	TArray<FIntPoint> CircleTiles;
 
-	UPROPERTY()
+	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	TArray<FIntPoint> CachedTiles;
 
 private:
+	UPROPERTY(Category = "Config", EditAnywhere)
+	bool bDebugTile = false;
+
 	void UpdateCachedTiles(const FIntPoint& Center);
 
 	void DrawDebugTile(float Duration);
+
+	FTimerHandle FogTimer;
+
+	uint8* FogBuffer = nullptr;
+	int FogBufferSize = 0;
+	int BufferSize = 0;
 };

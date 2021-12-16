@@ -59,8 +59,14 @@ public:
 	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
 	FVector GetTileExtent() const;
 
+	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
+	int GetGridResolution() const;
+	
 	UPROPERTY(Category = "Top Down Grid", BlueprintReadOnly)
 	TMap<FIntPoint, FTile> TileData;
+
+	/** @return Returns world value to grid value */
+	int ConvertToGridUnit(const int N) const;
 
 private:
 	void UpdateGridTransform();
@@ -92,13 +98,14 @@ private:
 	UPROPERTY(Category = "Top Down Grid", VisibleDefaultsOnly)
 	class UBillboardComponent* Billboard = nullptr;
 
-	UPROPERTY(Category = "Top Down Grid", VisibleAnywhere)
+	UPROPERTY(Category = "Top Down Grid", VisibleDefaultsOnly)
 	class UBoxComponent* GridVolume = nullptr;
 
+	UPROPERTY(Category = "Config", VisibleAnywhere)
 	FTransform GridTransform;
 	
 	/** 그리드 좌표의 최솟값을 (0, 0)으로 하기 위한 조정값 */
-	int GridShift = 64;
+	int GridShift = GridResolution / 2;
 
 	FVector TileExtent;
 };

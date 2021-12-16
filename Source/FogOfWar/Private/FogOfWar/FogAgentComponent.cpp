@@ -43,6 +43,8 @@ void UFogAgentComponent::BeginPlay()
 
 void UFogAgentComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	Super::EndPlay(EndPlayReason);
+
 	if (FogManager)
 	{
 		FogManager->RemoveFogAgent(this);
