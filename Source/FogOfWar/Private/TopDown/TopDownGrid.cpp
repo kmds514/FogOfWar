@@ -33,12 +33,10 @@ void ATopDownGrid::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	UpdateGridTransform();
-
-	GenerateTileData();
-
 	if (bDebugGrid)
 	{
+		UpdateGridTransform();
+		GenerateTileData();
 		DrawDebugGrid();
 	}
 }
@@ -181,6 +179,11 @@ FVector ATopDownGrid::GetTileExtent() const
 int ATopDownGrid::GetGridResolution() const
 {
 	return GridResolution;
+}
+
+int ATopDownGrid::GetGridVolumeExtentXY() const
+{
+	return GridVolumeExtentXY;
 }
 
 void ATopDownGrid::DrawDebugGrid()

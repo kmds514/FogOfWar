@@ -6,6 +6,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 
+#include "Rendering/Texture2DResource.h"
+
+//#include "AssetRegistry/AssetRegistryModule.h"
+
 // Sets default values
 AFogManager::AFogManager()
 {
@@ -34,33 +38,24 @@ void AFogManager::BeginPlay()
 		GetName(Name);
 		UE_LOG(LogTemp, Error, TEXT("%s: TopDownGrid must exist only one instance in world. Current instance is %d "), *Name, OutActors.Num());
 	}
+	GetWorldTimerManager().SetTimer(FogUpdateTimer, this, &AFogManager::UpdateFog, 1.0f / static_cast<float>(FogUpdateInterval), true, 0.5f);
 
-	GetWorldTimerManager().SetTimer(FogTimer, this, &AFogManager::UpdateFogAgents, 0.1f, true, 1.0f);
+	InitializeFogTexture();
 
-	BufferSize = TopDownGrid->GetGridResolution();
-
-	FogBuffer = new uint8[BufferSize * BufferSize];
-	FogBufferSize = BufferSize * BufferSize * sizeof(uint8);
-	FMemory::Memset(FogBuffer, 0x00, FogBufferSize);
+	ExploredTiles.Reserve(GridResolution * GridResolution);
 }
 
 void AFogManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	if (FogBuffer)
-	{
-		delete[] FogBuffer;
-		FogBuffer = nullptr;
-	}
+	ReleaseFogTexture();
 }
 
 // Called every frame
 void AFogManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	//UpdateFogAgents();
 
 	if (bDebugTile)
 	{
@@ -99,11 +94,57 @@ void AFogManager::RemoveFogAgent(UFogAgentComponent* const FogAgent)
 	}
 }
 
+void AFogManager::InitializeFogTexture()
+{
+	ReleaseFogTexture();
+
+	GridResolution = static_cast<uint32>(TopDownGrid->GetGridResolution());
+	FogBuffer = new uint8[GridResolution * GridResolution];
+	FogBufferSize = GridResolution * GridResolution * sizeof(uint8);
+	FMemory::Memset(FogBuffer, 0x00, FogBufferSize);
+
+	FogTexture = UTexture2D::CreateTransient(GridResolution, GridResolution, EPixelFormat::PF_G8);
+	FogTexture->CompressionSettings = TextureCompressionSettings::TC_Grayscale;
+	FogTexture->SRGB = false;
+	FogTexture->Filter = TextureFilter::TF_Nearest;
+	FogTexture->AddressX = TextureAddress::TA_Clamp;
+	FogTexture->AddressY = TextureAddress::TA_Clamp;
+	FogTexture->MipGenSettings = TextureMipGenSettings::TMGS_Blur5;
+	FogTexture->UpdateResource();
+	FogUpdateRegion = FUpdateTextureRegion2D(0, 0, 0, 0, GridResolution, GridResolution);
+}
+
+void AFogManager::ReleaseFogTexture()
+{
+	if (FogTexture)
+	{
+		FogTexture = nullptr;
+	}
+
+	if (FogBuffer)
+	{
+		delete[] FogBuffer;
+		FogBuffer = nullptr;
+	}
+}
+
+void AFogManager::UpdateFog()
+{
+	UpdateFogAgents();
+	UpdateFogTexture(FogBuffer, FogBufferSize, FogTexture, &FogUpdateRegion);
+}
+
 void AFogManager::UpdateFogAgents()
 {
 	if (TopDownGrid == nullptr)
 	{
 		return;
+	}
+
+	// 탐사한 타일 업데이트
+	for (auto& TileCoords : ExploredTiles)
+	{
+		FogBuffer[TileCoords.Y * GridResolution + TileCoords.X] = 0x04;
 	}
 
 	CachedTiles.Reset(CachedTiles.GetSlack());
@@ -124,15 +165,47 @@ void AFogManager::UpdateFogAgents()
 
 		CircleTiles.Reset(CircleTiles.GetSlack());
 
-		// Get circle tiles
+		// 원에 해당하는 타일을 가져옵니다.
 		GetBresenhamCircle(AgentCoords, Radius);
-
-		// 레이캐스트 정확도를 위해 기존 시야보다 작은 원을 하나 더 그립니다.
+		// 레이캐스트 정확도를 위해 기존 시야보다 1 작은 원에 해당하는 타일을 가져옵니다.
 		GetBresenhamCircle(AgentCoords, Radius - 1);
 
-		// Classify tiles
-		UpdateCachedTiles(AgentCoords);
+		// 중점에서 원까지 직선을 그립니다.
+		for (auto& Target : CircleTiles)
+		{
+			CastBresenhamLine(AgentCoords, Target);
+		}
 	}
+}
+
+void AFogManager::UpdateFogTexture(uint8* const Buffer, const uint32 BufferSize, UTexture2D* const Texture, FUpdateTextureRegion2D* const UpdateRegion)
+{
+	uint8* FogData = new uint8[BufferSize];
+	FMemory::Memcpy(FogData, Buffer, BufferSize);
+
+	FFogTextureContext* FogTextureContext = new FFogTextureContext();
+	FogTextureContext->TextureResource = (FTexture2DResource*)FogTexture->Resource;
+	FogTextureContext->MipIndex = FogTextureContext->TextureResource->GetCurrentFirstMip();
+	FogTextureContext->UpdateRegion = UpdateRegion;
+	FogTextureContext->SourcePitch = UpdateRegion->Width;
+	FogTextureContext->SourceData = FogData;
+
+	ENQUEUE_RENDER_COMMAND(UpdateTexture)(
+		[FogTextureContext](FRHICommandListImmediate& RHICmdList)
+		{
+			if (FogTextureContext->MipIndex <= 0)
+			{
+				RHIUpdateTexture2D(
+					FogTextureContext->TextureResource->GetTexture2DRHI(),
+					0 - FogTextureContext->MipIndex,
+					*FogTextureContext->UpdateRegion,
+					FogTextureContext->SourcePitch,
+					FogTextureContext->SourceData);
+			}
+			delete FogTextureContext;
+			delete[] FogTextureContext->SourceData;
+		}
+	);
 }
 
 void AFogManager::GetBresenhamCircle(const FIntPoint& Center, int Radius)
@@ -150,12 +223,6 @@ void AFogManager::GetBresenhamCircle(const FIntPoint& Center, int Radius)
 	CircleTiles.Add(Center + FIntPoint{  X, -Y });
 	CircleTiles.Add(Center + FIntPoint{  Y,  X });
 	CircleTiles.Add(Center + FIntPoint{ -Y,  X });
-
-	// test
-	auto Index = Center + FIntPoint{ X,Y };
-	FogBuffer[Index.X * BufferSize + Index.Y] = 0xFF;
-	Index = Center + FIntPoint{ X,-Y };
-	FogBuffer[Index.X * BufferSize + Index.Y] = 0xFF;
 
 	for (X = 1; X < Y; ++X)
 	{
@@ -242,9 +309,14 @@ void AFogManager::CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 			}
 			if (CenterTile->Height < Tile->Height)
 			{
+				CachedTiles.AddUnique({ X, Y });
+				ExploredTiles.AddUnique({ X, Y });
+				FogBuffer[Y * GridResolution + X] = 0xFF;
 				break;
 			}
-			CachedTiles.AddUnique({ X,Y });
+			CachedTiles.AddUnique({ X, Y });
+			ExploredTiles.AddUnique({ X, Y });
+			FogBuffer[Y * GridResolution + X] = 0xFF;
 		}
 	}
 	else
@@ -270,18 +342,15 @@ void AFogManager::CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 			}
 			if (CenterTile->Height < Tile->Height)
 			{
+				CachedTiles.AddUnique({ X, Y });
+				ExploredTiles.AddUnique({ X, Y });
+				FogBuffer[Y * GridResolution + X] = 0xFF;
 				break;
 			}
-			CachedTiles.AddUnique({ X,Y });
+			CachedTiles.AddUnique({ X, Y });
+			ExploredTiles.AddUnique({ X, Y });
+			FogBuffer[Y * GridResolution + X] = 0xFF;
 		}
-	}
-}
-
-void AFogManager::UpdateCachedTiles(const FIntPoint& Center)
-{
-	for (auto& Target : CircleTiles)
-	{
-		CastBresenhamLine(Center, Target);
 	}
 }
 

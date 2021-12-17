@@ -15,29 +15,31 @@ class FOGOFWAR_API AFogManager : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	AFogManager();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	void AddFogAgent(UFogAgentComponent* const FogAgent);
 	void RemoveFogAgent(UFogAgentComponent* const FogAgent);
 	void UpdateFogAgents();
 
+	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly, Transient)
+	UTexture2D* FogTexture = nullptr;
+
+protected:
 	/** https://en.wikipedia.org/wiki/Midpoint_circle_algorithm */
 	void GetBresenhamCircle(const FIntPoint& Center, int Radius);
 
 	/** https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm */
 	void CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End);
 
-protected:
+	void UpdateFog();
+
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	class ATopDownGrid* TopDownGrid = nullptr;
 
@@ -50,17 +52,36 @@ protected:
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	TArray<FIntPoint> CachedTiles;
 
-private:
+	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
+	TArray<FIntPoint> ExploredTiles;
+
 	UPROPERTY(Category = "Config", EditAnywhere)
 	bool bDebugTile = false;
 
-	void UpdateCachedTiles(const FIntPoint& Center);
+	/** Number of fog updates per second */
+	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "1", ClampMax ="60", UIMin = "1", UIMax = "60"))
+	uint8 FogUpdateInterval = 10;
 
 	void DrawDebugTile(float Duration);
 
-	FTimerHandle FogTimer;
+	void InitializeFogTexture();
+	void UpdateFogTexture(uint8* const Buffer, const uint32 FogBufferSize, UTexture2D* const FogTexture, FUpdateTextureRegion2D* const FogUpdateRegion);
+	void ReleaseFogTexture();
 
+	uint32 GridResolution = 0;
+
+	FTimerHandle FogUpdateTimer;
+	
 	uint8* FogBuffer = nullptr;
-	int FogBufferSize = 0;
-	int BufferSize = 0;
+	uint32 FogBufferSize = 0;
+	FUpdateTextureRegion2D FogUpdateRegion;
+
+	struct FFogTextureContext
+	{
+		FTexture2DResource* TextureResource;
+		uint32 MipIndex;
+		FUpdateTextureRegion2D* UpdateRegion;
+		uint32 SourcePitch; 
+		uint8* SourceData;
+	};
 };

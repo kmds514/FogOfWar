@@ -61,6 +61,9 @@ public:
 
 	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
 	int GetGridResolution() const;
+
+	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
+	int GetGridVolumeExtentXY() const;
 	
 	UPROPERTY(Category = "Top Down Grid", BlueprintReadOnly)
 	TMap<FIntPoint, FTile> TileData;
