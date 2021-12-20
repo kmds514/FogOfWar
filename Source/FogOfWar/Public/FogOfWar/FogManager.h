@@ -5,6 +5,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "TopDown/TopDownGrid.h"
+
+#include <unordered_map>
+#include <array>
+
 #include "FogManager.generated.h"
 
 class UFogAgentComponent;
@@ -39,6 +43,8 @@ protected:
 	void CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End);
 
 	void UpdateFog();
+
+	void InitializeFogUpscaling();
 
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	class ATopDownGrid* TopDownGrid = nullptr;
@@ -84,4 +90,18 @@ protected:
 		uint32 SourcePitch; 
 		uint8* SourceData;
 	};
+
+	using FogTexel2X2 = std::array<uint8, 4>;
+	using FogTexel4X4 = std::array<std::array<uint8, 4>, 4>;
+
+	struct FCustomHash
+	{
+		std::size_t operator()(const FogTexel2X2& Texel) const
+		{
+			return std::hash<int>{}(Texel[0] * 1000 + Texel[1] * 100 + Texel[2] * 10 + Texel[3]);
+		}
+	};
+
+	// https://technology.riotgames.com/sites/default/files/fow_diagram.png
+	std::unordered_map<FogTexel2X2, FogTexel4X4, FCustomHash> FogUpscaling;
 };
