@@ -12,8 +12,6 @@ AFogManager::AFogManager()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-	InitializeFogUpscaling();
 }
 
 // Called when the game starts or when spawned
@@ -37,18 +35,20 @@ void AFogManager::BeginPlay()
 		GetName(Name);
 		UE_LOG(LogTemp, Error, TEXT("%s: TopDownGrid must exist only one instance in world. Current instance is %d "), *Name, OutActors.Num());
 	}
-	GetWorldTimerManager().SetTimer(FogUpdateTimer, this, &AFogManager::UpdateFog, 1.0f / static_cast<float>(FogUpdateInterval), true, 0.5f);
-
-	InitializeFogTexture();
+	GridResolution = TopDownGrid->GetGridResolution();
 
 	ExploredTiles.Reserve(GridResolution * GridResolution);
+
+	FogOfWarTexture.InitFogTexture(GridResolution);
+
+	GetWorldTimerManager().SetTimer(FogUpdateTimer, this, &AFogManager::UpdateFog, 1.0f / static_cast<float>(FogUpdateInterval), true, 0.5f);
 }
 
 void AFogManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	Super::EndPlay(EndPlayReason);
+	FogOfWarTexture.ReleaseFogTexture();
 
-	ReleaseFogTexture();
+	Super::EndPlay(EndPlayReason);
 }
 
 // Called every frame
@@ -93,143 +93,10 @@ void AFogManager::RemoveFogAgent(UFogAgentComponent* const FogAgent)
 	}
 }
 
-void AFogManager::InitializeFogUpscaling()
-{
-	FogUpscaling.reserve(16);
-
-	// 0
-	FogUpscaling.emplace(FogTexel2X2{ 0x00, 0x00,
-									  0x00, 0x00 }, FogTexel4X4{ {{ 0x00, 0x00, 0x00, 0x00 },
-																  { 0x00, 0x00, 0x00, 0x00 },
-																  { 0x00, 0x00, 0x00, 0x00 },
-																  { 0x00, 0x00, 0x00, 0x00 }} });
-	// 1
-	FogUpscaling.emplace(FogTexel2X2{ 0xFF, 0x00,
-									  0x00, 0x00 }, FogTexel4X4{ {{ 0xFF, 0x80, 0x00, 0x00 },
-																  { 0x80, 0x00, 0x00, 0x00 },
-																  { 0x00, 0x00, 0x00, 0x00 },
-																  { 0x00, 0x00, 0x00, 0x00 }} });
-	// 2
-	FogUpscaling.emplace(FogTexel2X2{ 0x00, 0xFF,
-									  0x00, 0x00 }, FogTexel4X4{ {{ 0x00, 0x00, 0x80, 0xFF },
-																  { 0x00, 0x00, 0x00, 0x80 },
-																  { 0x00, 0x00, 0x00, 0x00 },
-																  { 0x00, 0x00, 0x00, 0x00 }} });
-	// 3
-	FogUpscaling.emplace(FogTexel2X2{ 0xFF, 0xFF,
-									  0x00, 0x00 }, FogTexel4X4{ {{ 0xFF, 0xFF, 0xFF, 0xFF },
-																  { 0xFF, 0xFF, 0xFF, 0xFF },
-																  { 0x00, 0x00, 0x00, 0x00 },
-																  { 0x00, 0x00, 0x00, 0x00 }} });
-	// 4
-	FogUpscaling.emplace(FogTexel2X2{ 0x00, 0x00,
-									  0xFF, 0x00 }, FogTexel4X4{ {{ 0x00, 0x00, 0x00, 0x00 },
-																  { 0x00, 0x00, 0x00, 0x00 },
-																  { 0x80, 0x00, 0x00, 0x00 },
-																  { 0xFF, 0x80, 0x00, 0x00 }} });
-	// 5
-	FogUpscaling.emplace(FogTexel2X2{ 0xFF, 0x00,
-									  0xFF, 0x00 }, FogTexel4X4{ {{ 0xFF, 0xFF, 0x00, 0x00 },
-																  { 0xFF, 0xFF, 0x00, 0x00 },
-																  { 0xFF, 0xFF, 0x00, 0x00 },
-																  { 0xFF, 0xFF, 0x00, 0x00 }} });
-	// 6
-	FogUpscaling.emplace(FogTexel2X2{ 0x00, 0xFF,
-									  0xFF, 0x00 }, FogTexel4X4{ {{ 0x00, 0x00, 0x80, 0xFF },
-																  { 0x00, 0x00, 0x00, 0x80 },
-																  { 0x80, 0x00, 0x00, 0x00 },
-																  { 0xFF, 0x80, 0x00, 0x00 }} });
-	// 7
-	FogUpscaling.emplace(FogTexel2X2{ 0xFF, 0xFF,
-									  0xFF, 0x00 }, FogTexel4X4{ {{ 0xFF, 0xFF, 0xFF, 0xFF },
-																  { 0xFF, 0xFF, 0xFF, 0xFF },
-																  { 0xFF, 0xFF, 0xFF, 0x80 },
-																  { 0xFF, 0xFF, 0x80, 0x00 }} });
-	// 8
-	FogUpscaling.emplace(FogTexel2X2{ 0x00, 0x00,
-									  0x00, 0xFF }, FogTexel4X4{ {{ 0x00, 0x00, 0x00, 0x00 },
-																  { 0x00, 0x00, 0x00, 0x00 },
-																  { 0x00, 0x00, 0x00, 0x80 },
-																  { 0x00, 0x00, 0x80, 0xFF }} });
-	// 9
-	FogUpscaling.emplace(FogTexel2X2{ 0xFF, 0x00,
-									  0x00, 0xFF }, FogTexel4X4{ {{ 0xFF, 0x80, 0x00, 0x00 },
-																  { 0x80, 0x00, 0x00, 0x00 },
-																  { 0x00, 0x00, 0x00, 0x80 },
-																  { 0x00, 0x00, 0x80, 0xFF }} });
-	// 10
-	FogUpscaling.emplace(FogTexel2X2{ 0x00, 0xFF,
-									  0x00, 0xFF }, FogTexel4X4{ {{ 0x00, 0x00, 0xFF, 0xFF },
-																  { 0x00, 0x00, 0xFF, 0xFF },
-																  { 0x00, 0x00, 0xFF, 0xFF },
-																  { 0x00, 0x00, 0xFF, 0xFF }} });
-	// 11
-	FogUpscaling.emplace(FogTexel2X2{ 0xFF, 0xFF,
-									  0x00, 0xFF }, FogTexel4X4{ {{ 0xFF, 0xFF, 0xFF, 0xFF },
-																  { 0xFF, 0xFF, 0xFF, 0xFF },
-																  { 0x80, 0xFF, 0xFF, 0xFF },
-																  { 0x00, 0x80, 0xFF, 0xFF }} });
-	// 12
-	FogUpscaling.emplace(FogTexel2X2{ 0x00, 0x00,
-									  0xFF, 0xFF }, FogTexel4X4{ {{ 0x00, 0x00, 0x00, 0x00 },
-																  { 0x00, 0x00, 0x00, 0x00 },
-																  { 0xFF, 0xFF, 0xFF, 0xFF },
-																  { 0xFF, 0xFF, 0xFF, 0xFF }} });
-	// 13
-	FogUpscaling.emplace(FogTexel2X2{ 0xFF, 0x00,
-									  0xFF, 0xFF }, FogTexel4X4{ {{ 0xFF, 0xFF, 0x80, 0x00 },
-																  { 0xFF, 0xFF, 0xFF, 0x80 },
-																  { 0xFF, 0xFF, 0xFF, 0xFF },
-																  { 0xFF, 0xFF, 0xFF, 0xFF }} });
-	// 14
-	FogUpscaling.emplace(FogTexel2X2{ 0x00, 0xFF,
-									  0xFF, 0xFF }, FogTexel4X4{ {{ 0x00, 0x80, 0xFF, 0xFF },
-																  { 0x80, 0xFF, 0xFF, 0xFF },
-																  { 0xFF, 0xFF, 0xFF, 0xFF },
-																  { 0xFF, 0xFF, 0xFF, 0xFF }} });
-	// 15
-	FogUpscaling.emplace(FogTexel2X2{ 0xFF, 0xFF,
-									  0xFF, 0xFF }, FogTexel4X4{ {{ 0xFF, 0xFF, 0xFF, 0xFF },
-																  { 0xFF, 0xFF, 0xFF, 0xFF },
-																  { 0xFF, 0xFF, 0xFF, 0xFF },
-																  { 0xFF, 0xFF, 0xFF, 0xFF }} });
-}
-
-void AFogManager::InitializeFogTexture()
-{
-	ReleaseFogTexture();
-
-	GridResolution = static_cast<uint32>(TopDownGrid->GetGridResolution());
-	FogBuffer = new uint8[GridResolution * GridResolution];
-	FogBufferSize = GridResolution * GridResolution * sizeof(uint8);
-	FMemory::Memset(FogBuffer, 0x00, FogBufferSize);
-
-	FogTexture = UTexture2D::CreateTransient(GridResolution, GridResolution, EPixelFormat::PF_G8);
-	FogTexture->Filter = TextureFilter::TF_Nearest;
-	FogTexture->AddressX = TextureAddress::TA_Clamp;
-	FogTexture->AddressY = TextureAddress::TA_Clamp;
-	FogTexture->UpdateResource();
-	FogUpdateRegion = FUpdateTextureRegion2D(0, 0, 0, 0, GridResolution, GridResolution);
-}
-
-void AFogManager::ReleaseFogTexture()
-{
-	if (FogTexture)
-	{
-		FogTexture = nullptr;
-	}
-
-	if (FogBuffer)
-	{
-		delete[] FogBuffer;
-		FogBuffer = nullptr;
-	}
-}
-
 void AFogManager::UpdateFog()
 {
 	UpdateFogAgents();
-	UpdateFogTexture(FogBuffer, FogBufferSize, FogTexture, &FogUpdateRegion);
+	FogOfWarTexture.UpdateFogTexture();
 }
 
 void AFogManager::UpdateFogAgents()
@@ -242,7 +109,7 @@ void AFogManager::UpdateFogAgents()
 	// 탐사한 타일 업데이트
 	for (auto& TileCoords : ExploredTiles)
 	{
-		FogBuffer[TileCoords.Y * GridResolution + TileCoords.X] = 0x04;
+		FogOfWarTexture.SetBuffer(TileCoords.Y * GridResolution + TileCoords.X, 0x04);
 	}
 
 	CachedTiles.Reset(CachedTiles.GetSlack());
@@ -265,7 +132,7 @@ void AFogManager::UpdateFogAgents()
 
 		// 원에 해당하는 타일을 가져옵니다.
 		GetBresenhamCircle(AgentCoords, Radius);
-		// 레이캐스트 정확도를 위해 기존 시야보다 1 작은 원에 해당하는 타일을 가져옵니다.
+		// 레이캐스트 정확도를 위해 기존 시야보다 작은 원에 해당하는 타일을 가져옵니다.
 		GetBresenhamCircle(AgentCoords, Radius - 1);
 
 		// 중점에서 원까지 직선을 그립니다.
@@ -276,34 +143,9 @@ void AFogManager::UpdateFogAgents()
 	}
 }
 
-void AFogManager::UpdateFogTexture(uint8* const Buffer, const uint32 BufferSize, UTexture2D* const Texture, FUpdateTextureRegion2D* const UpdateRegion)
+UTexture2D* AFogManager::GetFogTexture() const
 {
-	uint8* FogData = new uint8[BufferSize];
-	FMemory::Memcpy(FogData, Buffer, BufferSize);
-
-	FFogTextureContext* FogTextureContext = new FFogTextureContext();
-	FogTextureContext->TextureResource = (FTexture2DResource*)FogTexture->Resource;
-	FogTextureContext->MipIndex = FogTextureContext->TextureResource->GetCurrentFirstMip();
-	FogTextureContext->UpdateRegion = UpdateRegion;
-	FogTextureContext->SourcePitch = UpdateRegion->Width;
-	FogTextureContext->SourceData = FogData;
-
-	ENQUEUE_RENDER_COMMAND(UpdateTexture)(
-		[FogTextureContext](FRHICommandListImmediate& RHICmdList)
-		{
-			if (FogTextureContext->MipIndex <= 0)
-			{
-				RHIUpdateTexture2D(
-					FogTextureContext->TextureResource->GetTexture2DRHI(),
-					0 - FogTextureContext->MipIndex,
-					*FogTextureContext->UpdateRegion,
-					FogTextureContext->SourcePitch,
-					FogTextureContext->SourceData);
-			}
-			delete FogTextureContext;
-			delete[] FogTextureContext->SourceData;
-		}
-	);
+	return FogOfWarTexture.FogTexture;
 }
 
 void AFogManager::GetBresenhamCircle(const FIntPoint& Center, int Radius)
@@ -399,7 +241,6 @@ void AFogManager::CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 				D += 2 * DeltaY - 2 * DeltaX;
 				Y += YIncreasement;
 			}
-			// Add tile coords
 			Tile = TileData.Find({ X, Y });
 			if (Tile == nullptr)
 			{
@@ -409,12 +250,12 @@ void AFogManager::CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 			{
 				CachedTiles.AddUnique({ X, Y });
 				ExploredTiles.AddUnique({ X, Y });
-				FogBuffer[Y * GridResolution + X] = 0xFF;
+				FogOfWarTexture.SetBuffer(Y * GridResolution + X, 0xFF);
 				break;
 			}
 			CachedTiles.AddUnique({ X, Y });
 			ExploredTiles.AddUnique({ X, Y });
-			FogBuffer[Y * GridResolution + X] = 0xFF;
+			FogOfWarTexture.SetBuffer(Y * GridResolution + X, 0xFF);
 		}
 	}
 	else
@@ -432,7 +273,6 @@ void AFogManager::CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 				D += 2 * (DeltaX - DeltaY);
 				X += XIncreasement;
 			}
-			// Add tile coords
 			Tile = TileData.Find({ X, Y });
 			if (Tile == nullptr)
 			{
@@ -442,12 +282,12 @@ void AFogManager::CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 			{
 				CachedTiles.AddUnique({ X, Y });
 				ExploredTiles.AddUnique({ X, Y });
-				FogBuffer[Y * GridResolution + X] = 0xFF;
+				FogOfWarTexture.SetBuffer(Y * GridResolution + X, 0xFF);
 				break;
 			}
 			CachedTiles.AddUnique({ X, Y });
 			ExploredTiles.AddUnique({ X, Y });
-			FogBuffer[Y * GridResolution + X] = 0xFF;
+			FogOfWarTexture.SetBuffer(Y * GridResolution + X, 0xFF);
 		}
 	}
 }
