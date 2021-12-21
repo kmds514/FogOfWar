@@ -186,6 +186,11 @@ int ATopDownGrid::GetGridVolumeExtentXY() const
 	return GridVolumeExtentXY;
 }
 
+int ATopDownGrid::GetGridVolumeExtentZ() const
+{
+	return GridVolumeExtentZ;
+}
+
 void ATopDownGrid::DrawDebugGrid()
 {
 	if (bDebugGrid == false)
