@@ -28,12 +28,6 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	ETileHeight Height;
-
-	UPROPERTY(BlueprintReadWrite)
-	bool bVisible = false;
-
-	UPROPERTY(BlueprintReadWrite)
-	bool bCanTravel = true;
 };
 
 UCLASS()
@@ -66,12 +60,14 @@ public:
 	int GetGridVolumeExtentXY() const;
 	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
 	int GetGridVolumeExtentZ() const;
-	
-	UPROPERTY(Category = "Top Down Grid", BlueprintReadOnly)
-	TMap<FIntPoint, FTile> TileData;
 
 	/** @return Returns world value to grid value */
 	int ConvertToGridUnit(const int N) const;
+
+	UPROPERTY(Category = "Top Down Grid", BlueprintReadOnly)
+	TMap<FIntPoint, FTile> TileData;
+
+	TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked;
 
 private:
 	void UpdateGridTransform();

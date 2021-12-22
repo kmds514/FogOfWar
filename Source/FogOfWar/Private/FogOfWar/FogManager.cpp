@@ -109,10 +109,12 @@ void AFogManager::UpdateFogAgents()
 	// 탐사한 타일 업데이트
 	for (auto& TileCoords : ExploredTiles)
 	{
-		FogOfWarTexture.SetBuffer(TileCoords.Y * GridResolution + TileCoords.X, 0x04);
+		//FogOfWarTexture.SetBuffer(TileCoords.Y * GridResolution + TileCoords.X, 0x04);
 	}
 
 	CachedTiles.Reset(CachedTiles.GetSlack());
+
+	FogOfWarTexture.ResetBuffer();
 
 	for (auto Agent : FogAgents)
 	{
@@ -121,7 +123,7 @@ void AFogManager::UpdateFogAgents()
 			continue;
 		}
 		const FIntPoint& AgentCoords = TopDownGrid->WorldToGrid(Agent->GetFogAgentLocation());
-		const int Radius = TopDownGrid->ConvertToGridUnit(Agent->Sight);
+		const int AgentSight = TopDownGrid->ConvertToGridUnit(Agent->Sight);
 		const FTile* AgentTile = TopDownGrid->TileData.Find(AgentCoords);
 		if (AgentTile == nullptr)
 		{
@@ -130,16 +132,18 @@ void AFogManager::UpdateFogAgents()
 
 		CircleTiles.Reset(CircleTiles.GetSlack());
 
-		// 원에 해당하는 타일을 가져옵니다.
-		GetBresenhamCircle(AgentCoords, Radius);
-		// 레이캐스트 정확도를 위해 기존 시야보다 작은 원에 해당하는 타일을 가져옵니다.
-		GetBresenhamCircle(AgentCoords, Radius - 1);
+		//// 원에 해당하는 타일을 가져옵니다.
+		//GetBresenhamCircle(AgentCoords, Radius);
+		//// 레이캐스트 정확도를 위해 기존 시야보다 작은 원에 해당하는 타일을 가져옵니다.
+		//GetBresenhamCircle(AgentCoords, Radius - 1);
 
-		// 중점에서 원까지 직선을 그립니다.
-		for (auto& Target : CircleTiles)
-		{
-			CastBresenhamLine(AgentCoords, Target);
-		}
+		//// 중점에서 원까지 직선을 그립니다.
+		//for (auto& Target : CircleTiles)
+		//{
+		//	CastBresenhamLine(AgentCoords, Target);
+		//}
+
+		FogOfWarTexture.CalculateFog(AgentCoords, AgentSight, TopDownGrid->IsBlocked);
 	}
 }
 
@@ -250,12 +254,12 @@ void AFogManager::CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 			{
 				CachedTiles.AddUnique({ X, Y });
 				ExploredTiles.AddUnique({ X, Y });
-				FogOfWarTexture.SetBuffer(Y * GridResolution + X, 0xFF);
+				//FogOfWarTexture.SetBuffer(Y * GridResolution + X, 0xFF);
 				break;
 			}
 			CachedTiles.AddUnique({ X, Y });
 			ExploredTiles.AddUnique({ X, Y });
-			FogOfWarTexture.SetBuffer(Y * GridResolution + X, 0xFF);
+			//FogOfWarTexture.SetBuffer(Y * GridResolution + X, 0xFF);
 		}
 	}
 	else
@@ -282,12 +286,12 @@ void AFogManager::CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 			{
 				CachedTiles.AddUnique({ X, Y });
 				ExploredTiles.AddUnique({ X, Y });
-				FogOfWarTexture.SetBuffer(Y * GridResolution + X, 0xFF);
+				//FogOfWarTexture.SetBuffer(Y * GridResolution + X, 0xFF);
 				break;
 			}
 			CachedTiles.AddUnique({ X, Y });
 			ExploredTiles.AddUnique({ X, Y });
-			FogOfWarTexture.SetBuffer(Y * GridResolution + X, 0xFF);
+			//FogOfWarTexture.SetBuffer(Y * GridResolution + X, 0xFF);
 		}
 	}
 }

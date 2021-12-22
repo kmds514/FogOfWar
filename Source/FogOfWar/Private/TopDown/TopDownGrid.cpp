@@ -27,6 +27,18 @@ ATopDownGrid::ATopDownGrid()
 	GridVolume->SetBoxExtent(FVector(GridVolumeExtentXY, GridVolumeExtentXY, GridVolumeExtentZ));
 
 	TileData.Reserve(GridResolution * GridResolution);
+
+	IsBlocked = [&](const FIntPoint& Center, const FIntPoint& Target)
+	{
+		auto C = TileData.Find(Center);
+		auto T = TileData.Find(Target);
+
+		if (C && T)
+		{
+			return C->Height < T->Height;
+		}
+		return false;
+	};
 }
 
 void ATopDownGrid::OnConstruction(const FTransform& Transform)
@@ -122,8 +134,6 @@ void ATopDownGrid::GenerateTileData()
 				FTile Tile = {};
 				Tile.WorldLocation = OutHit.ImpactPoint;
 				Tile.Height = ETileHeight::Lowest;
-				Tile.bVisible = false;
-				Tile.bCanTravel = true;
 
 				TileData.Add(FIntPoint{ i, j }, Tile);
 			}
@@ -132,8 +142,6 @@ void ATopDownGrid::GenerateTileData()
 				FTile Tile = {};
 				Tile.WorldLocation = OutHit.ImpactPoint;
 				Tile.Height = ETileHeight::Low;
-				Tile.bVisible = false;
-				Tile.bCanTravel = true;
 
 				TileData.Add(FIntPoint{ i, j }, Tile);
 			}
@@ -142,8 +150,6 @@ void ATopDownGrid::GenerateTileData()
 				FTile Tile = {};
 				Tile.WorldLocation = OutHit.ImpactPoint;
 				Tile.Height = ETileHeight::Medium;
-				Tile.bVisible = false;
-				Tile.bCanTravel = true;
 
 				TileData.Add(FIntPoint{ i, j }, Tile);
 			}
@@ -152,8 +158,6 @@ void ATopDownGrid::GenerateTileData()
 				FTile Tile = {};
 				Tile.WorldLocation = OutHit.ImpactPoint;
 				Tile.Height = ETileHeight::High;
-				Tile.bVisible = false;
-				Tile.bCanTravel = true;
 
 				TileData.Add(FIntPoint{ i, j }, Tile);
 			}
@@ -162,8 +166,6 @@ void ATopDownGrid::GenerateTileData()
 				FTile Tile = {};
 				Tile.WorldLocation = OutHit.ImpactPoint;
 				Tile.Height = ETileHeight::Highest;
-				Tile.bVisible = false;
-				Tile.bCanTravel = true;
 
 				TileData.Add(FIntPoint{ i, j }, Tile);
 			}
