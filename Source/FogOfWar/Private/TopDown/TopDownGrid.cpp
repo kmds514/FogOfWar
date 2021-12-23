@@ -62,7 +62,7 @@ void ATopDownGrid::BeginPlay()
 	GenerateTileData();
 }
 
-int ATopDownGrid::ConvertToGridUnit(const int N) const
+int ATopDownGrid::ToGridUnit(const int N) const
 {
 	return N / GridTransform.GetScale3D().X;
 }

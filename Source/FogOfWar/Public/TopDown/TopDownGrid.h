@@ -62,7 +62,7 @@ public:
 	int GetGridVolumeExtentZ() const;
 
 	/** @return Returns world value to grid value */
-	int ConvertToGridUnit(const int N) const;
+	int ToGridUnit(const int N) const;
 
 	UPROPERTY(Category = "Top Down Grid", BlueprintReadOnly)
 	TMap<FIntPoint, FTile> TileData;

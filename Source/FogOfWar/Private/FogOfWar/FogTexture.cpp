@@ -28,19 +28,25 @@ void FFogTexture::InitFogTexture(const uint32 Resolution)
 
 	uint32 TextureSize = FMath::RoundUpToPowerOfTwo(Resolution);
 
-	Width = TextureSize;
-	Height = TextureSize;
-	Buffer = new uint8[Width * Height];
-	BufferSize = Width * Height * sizeof(uint8);
-	FMemory::Memset(Buffer, 0x00, BufferSize);
-	UpdateRegion = FUpdateTextureRegion2D(0, 0, 0, 0, Width, Height);
+	SourceWidth = TextureSize;
+	SourceHeight = TextureSize;
+	SourceBuffer = new uint8[SourceWidth * SourceHeight];
+	SourceBufferSize = SourceWidth * SourceHeight * sizeof(uint8);
+	FMemory::Memset(SourceBuffer, 0, SourceBufferSize);
 
-	FogTexture = UTexture2D::CreateTransient(Width, Height, EPixelFormat::PF_G8);
+	UpscaleWidth = TextureSize * 4;
+	UpscaleHeight = TextureSize * 4;
+	UpscaleBuffer = new uint8[UpscaleWidth * UpscaleHeight];
+	UpscaleBufferSize = UpscaleWidth * UpscaleHeight * sizeof(uint8);
+	FMemory::Memset(UpscaleBuffer, 0, UpscaleBufferSize);
+	UpscaleUpdateRegion = FUpdateTextureRegion2D(0, 0, 0, 0, UpscaleWidth, UpscaleHeight);
+
+	FogTexture = UTexture2D::CreateTransient(UpscaleWidth, UpscaleHeight, EPixelFormat::PF_G8);
 	FogTexture->Filter = TextureFilter::TF_Nearest;
 	FogTexture->CompressionSettings = TextureCompressionSettings::TC_Grayscale;
 	FogTexture->AddressX = TextureAddress::TA_Clamp;
 	FogTexture->AddressY = TextureAddress::TA_Clamp;
-	FogTexture->MipGenSettings = TextureMipGenSettings::TMGS_Blur5;
+	//FogTexture->MipGenSettings = TextureMipGenSettings::TMGS_Blur5;
 	FogTexture->SRGB = false;
 	FogTexture->UpdateResource();
 }
@@ -51,24 +57,54 @@ void FFogTexture::ReleaseFogTexture()
 	{
 		FogTexture = nullptr;
 	}
-	if (Buffer)
+	if (SourceBuffer)
 	{
-		delete[] Buffer;
-		Buffer = nullptr;
+		delete[] SourceBuffer;
+		SourceBuffer = nullptr;
 	}
+	if (UpscaleBuffer)
+	{
+		delete[] UpscaleBuffer;
+		UpscaleBuffer = nullptr;
+	}
+}
+
+void FFogTexture::UpdateExploredFog()
+{
+	for (uint32 i = 0; i < SourceBufferSize; ++i)
+	{
+		if (SourceBuffer[i] > 0)
+		{
+			SourceBuffer[i] = 0x04;
+		}
+	}
+}
+
+void FFogTexture::UpdateFogBuffer(const FIntPoint& Center, int Radius, TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked)
+{
+	// Ray casting
+	//DrawRayCastingFog(Center, Radius, IsBlocked);
+
+	// Shadow casting
+	SourceBuffer[Center.Y * SourceWidth + Center.X] = 0xFF;
+	for (int i = 0; i < 8; ++i)
+	{
+		DrawShadowCastingFog(Center, Radius, 1, 1.0f, 0.0f, OctantTransforms[i], IsBlocked);
+	}
+
+	// Upscale buffer
+	UpdateUpscaleBuffer();
 }
 
 void FFogTexture::UpdateFogTexture()
 {
-	uint8* FogData = new uint8[BufferSize];
-	FMemory::Memcpy(FogData, Buffer, BufferSize);
-
 	FFogTextureContext* FogTextureContext = new FFogTextureContext();
 	FogTextureContext->TextureResource = (FTexture2DResource*)FogTexture->Resource;
 	FogTextureContext->MipIndex = FogTextureContext->TextureResource->GetCurrentFirstMip();
-	FogTextureContext->UpdateRegion = &UpdateRegion;
-	FogTextureContext->SourcePitch = UpdateRegion.Width;
-	FogTextureContext->SourceData = FogData;
+	FogTextureContext->UpdateRegion = &UpscaleUpdateRegion;
+	FogTextureContext->SourcePitch = UpscaleUpdateRegion.Width;
+	FogTextureContext->SourceData = new uint8[UpscaleBufferSize];
+	FMemory::Memcpy(FogTextureContext->SourceData, UpscaleBuffer, UpscaleBufferSize);
 
 	ENQUEUE_RENDER_COMMAND(UpdateTexture)([FogTextureContext](FRHICommandListImmediate& RHICmdList)
 		{
@@ -80,17 +116,103 @@ void FFogTexture::UpdateFogTexture()
 		});
 }
 
-void FFogTexture::CalculateFog(const FIntPoint& Center, int Radius, TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked)
+void FFogTexture::DrawRayCastingFog(const FIntPoint& Center, int Radius, TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked)
 {
-	Buffer[Center.Y * Width + Center.X] = 0xFF;
-
-	for (int i = 0; i < 8; ++i)
+	if (Radius == 0)
 	{
-		CastShadow(Center, Radius, 1, 1.0f, 0.0f, OctantTransforms[i], IsBlocked);
+		return;
+	}
+
+	// Get bresenham circle
+	int X = 0;
+	int Y = Radius;
+	int D = 1 - Radius; // Discriminant
+
+	CastBresenhamLine(Center, Center + FIntPoint{  X,  Y }, IsBlocked);
+	CastBresenhamLine(Center, Center + FIntPoint{  X, -Y }, IsBlocked);
+	CastBresenhamLine(Center, Center + FIntPoint{  Y,  X }, IsBlocked);
+	CastBresenhamLine(Center, Center + FIntPoint{ -Y,  X }, IsBlocked);
+
+	for (X = 1; X < Y; ++X)
+	{
+		if (D <= 0)
+		{
+			D += 2 * X + 1;
+		}
+		else
+		{
+			D += 2 * X + 1 - 2 * Y;
+			--Y;
+		}
+		CastBresenhamLine(Center, Center + FIntPoint{ X,  Y }, IsBlocked);
+		CastBresenhamLine(Center, Center + FIntPoint{ -X,  Y }, IsBlocked);
+		CastBresenhamLine(Center, Center + FIntPoint{ X, -Y }, IsBlocked);
+		CastBresenhamLine(Center, Center + FIntPoint{ -X, -Y }, IsBlocked);
+		CastBresenhamLine(Center, Center + FIntPoint{ Y,  X }, IsBlocked);
+		CastBresenhamLine(Center, Center + FIntPoint{ -Y,  X }, IsBlocked);
+		CastBresenhamLine(Center, Center + FIntPoint{ Y, -X }, IsBlocked);
+		CastBresenhamLine(Center, Center + FIntPoint{ -Y, -X }, IsBlocked);
 	}
 }
 
-void FFogTexture::CastShadow(const FIntPoint& Center, int Radius, int Row, float Start, float End, const FOctantTransform& T, TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked)
+void FFogTexture::CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End, TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked)
+{
+	int X = Start.X;
+	int Y = Start.Y;
+	int DeltaX = FMath::Abs(End.X - Start.X);
+	int DeltaY = FMath::Abs(End.Y - Start.Y);
+	int XIncreasement = (End.X < Start.X) ? -1 : 1;
+	int YIncreasement = (End.Y < Start.Y) ? -1 : 1;
+
+	if (DeltaY < DeltaX)
+	{
+		int D = 2 * (DeltaY - DeltaX);
+
+		for (; (Start.X < End.X ? X < End.X : X > End.X); X += XIncreasement)
+		{
+			if (0 >= D)
+			{
+				D += 2 * DeltaY;
+			}
+			else
+			{
+				D += 2 * DeltaY - 2 * DeltaX;
+				Y += YIncreasement;
+			}
+			if (IsBlocked({ Start.X, Start.Y }, { X, Y }))
+			{
+				SourceBuffer[Y * SourceWidth + X] = 0xFF;
+				break;
+			}
+			SourceBuffer[Y * SourceWidth + X] = 0xFF;
+		}
+	}
+	else
+	{
+		int D = 2 * (DeltaX - DeltaY);
+
+		for (; (Start.Y < End.Y ? Y < End.Y : Y > End.Y); Y += YIncreasement)
+		{
+			if (0 >= D)
+			{
+				D += 2 * DeltaX;
+			}
+			else
+			{
+				D += 2 * (DeltaX - DeltaY);
+				X += XIncreasement;
+			}
+			if (IsBlocked({ Start.X, Start.Y }, { X, Y }))
+			{
+				SourceBuffer[Y * SourceWidth + X] = 0xFF;
+				break;
+			}
+			SourceBuffer[Y * SourceWidth + X] = 0xFF;
+		}
+	}
+}
+
+void FFogTexture::DrawShadowCastingFog(const FIntPoint& Center, int Radius, int Row, float Start, float End, const FOctantTransform& T, TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked)
 {
 	if (Start < End)
 	{
@@ -110,7 +232,8 @@ void FFogTexture::CastShadow(const FIntPoint& Center, int Radius, int Row, float
 			float LeftSlope = (DeltaX - 0.5f) / (DeltaY + 0.5f);
 			float RightSlope = (DeltaX + 0.5f) / (DeltaY - 0.5f);
 
-			if (((CurrentX >= 0 && CurrentY >= 0 && CurrentX < Width && CurrentY < Height) == false) || Start < RightSlope)
+			if (((CurrentX >= 0 && CurrentY >= 0 && CurrentX < SourceWidth && CurrentY < SourceHeight) == false) 
+				|| Start < RightSlope)
 			{
 				continue;
 			}
@@ -119,11 +242,13 @@ void FFogTexture::CastShadow(const FIntPoint& Center, int Radius, int Row, float
 				break;
 			}
 
+			// Check if it's within the lightable area
 			if (IsInRadius(Center, { CurrentX, CurrentY }, Radius))
 			{
-				Buffer[CurrentY * Width + CurrentX] = 0xFF;
+				SourceBuffer[CurrentY * SourceWidth + CurrentX] = 0xFF;
 			}
 
+			// Previous cell was a blocking one
 			if (bBlocked)
 			{
 				if (IsBlocked(Center, { CurrentX, CurrentY }))
@@ -142,7 +267,7 @@ void FFogTexture::CastShadow(const FIntPoint& Center, int Radius, int Row, float
 				if (IsBlocked(Center, { CurrentX, CurrentY }) && Distance < Radius)
 				{
 					bBlocked = true;
-					CastShadow(Center, Radius, Distance + 1, Start, LeftSlope, T, IsBlocked);
+					DrawShadowCastingFog(Center, Radius, Distance + 1, Start, LeftSlope, T, IsBlocked);
 					NewStart = RightSlope;
 				}
 			}
@@ -150,17 +275,161 @@ void FFogTexture::CastShadow(const FIntPoint& Center, int Radius, int Row, float
 	}
 }
 
-void FFogTexture::ResetBuffer()
-{
-	FMemory::Memset(Buffer, 0x04, BufferSize);
-}
-
 bool FFogTexture::IsInRadius(const FIntPoint& Center, const FIntPoint& Target, int Radius) const
 {
 	return (Target.X - Center.X) * (Target.X - Center.X) + (Target.Y - Center.Y) * (Target.Y - Center.Y) < Radius * Radius;
 }
 
-void FFogTexture::SetBuffer(const uint32 Index, const uint8 Value)
+void FFogTexture::UpdateUpscaleBuffer()
 {
-	Buffer[Index] = Value;
+	TArray<uint8> SourceTexel;
+	TArray<TArray<uint8>> UpscaleTexel;
+
+	for (int i = 0; i < SourceWidth; ++i)
+	{
+		for (int j = 0; j < SourceHeight; ++j)
+		{
+			SourceTexel = GetTexel2X2(i, j);
+			UpscaleTexel = GetTexel4X4(SourceTexel);
+
+			for (int Row = 0; Row < 4; ++Row)
+			{
+				int Index = (Row + j * 4) * UpscaleWidth + i * 4;
+				FMemory::Memcpy(&UpscaleBuffer[Index], &UpscaleTexel[Row], sizeof(uint8) * 4);
+			}
+		}
+	}
+}
+
+TArray<uint8> FFogTexture::GetTexel2X2(int Width, int Height)
+{
+	int Right  = FMath::Min(Width  + 1, SourceWidth  - 1);
+	int Bottom = FMath::Min(Height + 1, SourceHeight - 1);
+
+	TArray<uint8> Texel2X2;
+	Texel2X2.Reserve(4);
+	Texel2X2.Emplace(SourceBuffer[Height * SourceWidth + Width]);
+	Texel2X2.Emplace(SourceBuffer[Height * SourceWidth + Right]);
+	Texel2X2.Emplace(SourceBuffer[Bottom * SourceWidth + Width]);
+	Texel2X2.Emplace(SourceBuffer[Bottom * SourceWidth + Right]);
+
+	return Texel2X2;
+}
+
+TArray<TArray<uint8>> FFogTexture::GetTexel4X4(const TArray<uint8>& Texel2X2)
+{
+	//TODO
+	TArray<TArray<uint8>> T;
+	T.Init({ 0, 0, 0, 0 }, 4);
+
+	uint8 V = FMath::Max(Texel2X2.Max(), 0x04);
+	uint8 Count = 0;
+
+	for (auto& Texel : Texel2X2)
+	{
+		if (Texel == V)
+		{
+			++Count;
+		}
+	}
+
+	if (Count == 1)
+	{
+		if (Texel2X2[0] == V)
+		{
+			T[0][0] = V; T[0][1] = V;
+			T[1][0] = V;
+		}
+		if (Texel2X2[1] == V)
+		{
+			T[0][2] = V; T[0][3] = V;
+						 T[1][3] = V;
+		}
+		if (Texel2X2[2] == V)
+		{
+			T[2][0] = V;
+			T[3][0] = V; T[3][1] = V;
+		}
+		if (Texel2X2[3] == V)
+		{
+						 T[2][3] = V;
+			T[3][2] = V; T[3][3] = V;
+		}
+	}
+	if (Count == 2)
+	{
+		if (Texel2X2[0] == V && Texel2X2[1] == V)
+		{
+			T[0][0] = V; T[0][1] = V; T[0][2] = V; T[0][3] = V;
+			T[1][0] = V; T[1][1] = V; T[1][2] = V; T[1][3] = V;
+		}
+		if (Texel2X2[0] == V && Texel2X2[2] == V)
+		{
+			T[0][0] = V; T[0][1] = V;
+			T[1][0] = V; T[1][1] = V;
+			T[2][0] = V; T[2][1] = V;
+			T[3][0] = V; T[3][1] = V;
+		}
+		if (Texel2X2[0] == V && Texel2X2[3] == V)
+		{
+			T[0][0] = V; T[0][1] = V;			   T[2][3] = V;
+			T[1][0] = V;			  T[3][2] = V; T[3][3] = V;
+		}
+		if (Texel2X2[1] == V && Texel2X2[2] == V)
+		{
+			T[2][0] = V;			  T[0][2] = V; T[0][3] = V;
+			T[3][0] = V; T[3][1] = V;			   T[1][3] = V;
+		}
+		if (Texel2X2[1] == V && Texel2X2[3] == V)
+		{
+			T[0][2] = V; T[0][3] = V;
+			T[1][2] = V; T[1][3] = V;
+			T[2][2] = V; T[2][3] = V;
+			T[3][2] = V; T[3][3] = V;
+		}
+		if (Texel2X2[2] == V && Texel2X2[3] == V)
+		{
+			T[2][0] = V; T[2][1] = V; T[2][2] = V; T[2][3] = V;
+			T[3][0] = V; T[3][1] = V; T[3][2] = V; T[3][3] = V;
+		}
+	}
+	if (Count == 3)
+	{
+		if (Texel2X2[0] == V && Texel2X2[1] == V && Texel2X2[2] == V)
+		{
+			T[0][0] = V; T[0][1] = V; T[0][2] = V; T[0][3] = V;
+			T[1][0] = V; T[1][1] = V; T[1][2] = V; T[1][3] = V;
+			T[2][0] = V; T[2][1] = V; T[2][2] = V; T[2][3] = V;
+			T[3][0] = V; T[3][1] = V; T[3][2] = V;
+		}
+		if (Texel2X2[0] == V && Texel2X2[1] == V && Texel2X2[3] == V)
+		{
+			T[0][0] = V; T[0][1] = V; T[0][2] = V; T[0][3] = V;
+			T[1][0] = V; T[1][1] = V; T[1][2] = V; T[1][3] = V;
+			T[2][0] = V; T[2][1] = V; T[2][2] = V; T[2][3] = V;
+						 T[3][1] = V; T[3][2] = V; T[3][3] = V;
+		}
+		if (Texel2X2[0] == V && Texel2X2[2] == V && Texel2X2[3] == V)
+		{
+			T[0][0] = V; T[0][1] = V; T[0][2] = V;
+			T[1][0] = V; T[1][1] = V; T[1][2] = V; T[1][3] = V;
+			T[2][0] = V; T[2][1] = V; T[2][2] = V; T[2][3] = V;
+			T[3][0] = V; T[3][1] = V; T[3][2] = V; T[3][3] = V;
+		}
+		if (Texel2X2[1] == V && Texel2X2[2] == V && Texel2X2[3] == V)
+		{
+						 T[0][1] = V; T[0][2] = V; T[0][3] = V;
+			T[1][0] = V; T[1][1] = V; T[1][2] = V; T[1][3] = V;
+			T[2][0] = V; T[2][1] = V; T[2][2] = V; T[2][3] = V;
+			T[3][0] = V; T[3][1] = V; T[3][2] = V; T[3][3] = V;
+		}
+	}
+	if (Count == 4)
+	{
+		T[0][0] = V; T[0][1] = V; T[0][2] = V; T[0][3] = V;
+		T[1][0] = V; T[1][1] = V; T[1][2] = V; T[1][3] = V;
+		T[2][0] = V; T[2][1] = V; T[2][2] = V; T[2][3] = V;
+		T[3][0] = V; T[3][1] = V; T[3][2] = V; T[3][3] = V;
+	}
+	return T;
 }
