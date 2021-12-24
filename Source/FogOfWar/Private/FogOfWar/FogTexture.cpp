@@ -30,12 +30,14 @@ void FFogTexture::InitFogTexture(const uint32 Resolution)
 
 	uint32 TextureSize = FMath::RoundUpToPowerOfTwo(Resolution);
 
+	// Create source buffer
 	SourceWidth = TextureSize;
 	SourceHeight = TextureSize;
 	SourceBuffer = new uint8[SourceWidth * SourceHeight];
 	SourceBufferSize = SourceWidth * SourceHeight * sizeof(uint8);
 	FMemory::Memset(SourceBuffer, 0, SourceBufferSize);
 
+	// Create upscale buffer
 	UpscaleWidth = TextureSize * 4;
 	UpscaleHeight = TextureSize * 4;
 	UpscaleBuffer = new uint8[UpscaleWidth * UpscaleHeight];
@@ -43,15 +45,16 @@ void FFogTexture::InitFogTexture(const uint32 Resolution)
 	FMemory::Memset(UpscaleBuffer, 0, UpscaleBufferSize);
 	UpscaleUpdateRegion = FUpdateTextureRegion2D(0, 0, 0, 0, UpscaleWidth, UpscaleHeight);
 
+	// Create ExploredBuffer 
 	ExploredBuffer = new uint8[UpscaleWidth * UpscaleHeight];
 	FMemory::Memset(ExploredBuffer, 0, UpscaleBufferSize);
 
+	// Create Fog Texture
 	FogTexture = UTexture2D::CreateTransient(UpscaleWidth, UpscaleHeight, EPixelFormat::PF_G8);
 	FogTexture->Filter = TextureFilter::TF_Nearest;
 	FogTexture->CompressionSettings = TextureCompressionSettings::TC_Grayscale;
 	FogTexture->AddressX = TextureAddress::TA_Clamp;
 	FogTexture->AddressY = TextureAddress::TA_Clamp;
-	FogTexture->MipGenSettings = TextureMipGenSettings::TMGS_Blur5;
 	FogTexture->SRGB = false;
 	FogTexture->UpdateResource();
 }
@@ -354,25 +357,25 @@ void FFogTexture::GenerateUpscaleMap()
 															 { 0, 0, 0, 0 },
 															 { 0, 0, 0, 0 } } });
 
-	UpscaleMap.Emplace(FTexel2X2{ 0xFF, 0, 0, 0 }, FTexel4X4{ { { 0xFF, 0xFF, 0,    0	 },
-																{ 0xFF, 0,	  0,    0	 },
+	UpscaleMap.Emplace(FTexel2X2{ 0xFF, 0, 0, 0 }, FTexel4X4{ { { 0xFF, 0x04, 0,    0	 },
+																{ 0x04, 0,	  0,    0	 },
 																{ 0,	0,	  0,    0	 },
 																{ 0,	0,	  0,    0	 } } });
 
-	UpscaleMap.Emplace(FTexel2X2{ 0, 0xFF, 0, 0 }, FTexel4X4{ { { 0,    0,    0xFF, 0xFF },
-																{ 0,    0,    0,	0xFF },
+	UpscaleMap.Emplace(FTexel2X2{ 0, 0xFF, 0, 0 }, FTexel4X4{ { { 0,    0,    0x04, 0xFF },
+																{ 0,    0,    0,	0x04 },
 																{ 0,    0,    0,	0	 },
 																{ 0,    0,    0,	0	 } } });
 
 	UpscaleMap.Emplace(FTexel2X2{ 0, 0, 0xFF, 0 }, FTexel4X4{ { { 0,	0,	  0,    0    },
 																{ 0,	0,	  0,    0    },
-																{ 0xFF, 0,	  0,    0    },
-																{ 0xFF, 0xFF, 0,    0    } } });
+																{ 0x04, 0,	  0,    0    },
+																{ 0xFF, 0x04, 0,    0    } } });
 
 	UpscaleMap.Emplace(FTexel2X2{ 0, 0, 0, 0xFF }, FTexel4X4{ { { 0,    0,    0,    0    },
 															    { 0,    0,    0,    0    },
-															    { 0,    0,    0,    0xFF },
-															    { 0,    0,    0xFF, 0xFF } } });
+															    { 0,    0,    0,    0x04 },
+															    { 0,    0,    0x04, 0xFF } } });
 
 	UpscaleMap.Emplace(FTexel2X2{ 0xFF, 0xFF, 0, 0 }, FTexel4X4{ { { 0xFF, 0xFF, 0xFF, 0xFF },
 																   { 0xFF, 0xFF, 0xFF, 0xFF },
@@ -384,15 +387,15 @@ void FFogTexture::GenerateUpscaleMap()
 																   { 0xFF, 0xFF, 0, 0 },
 																   { 0xFF, 0xFF, 0, 0 } } });
 
-	UpscaleMap.Emplace(FTexel2X2{ 0xFF, 0, 0, 0xFF }, FTexel4X4{ { { 0xFF, 0xFF, 0,	   0    },
-																   { 0xFF, 0,	 0,	   0    },
-																   { 0,	   0,	 0,	   0xFF },
-																   { 0,	   0,	 0xFF, 0xFF } } });
+	UpscaleMap.Emplace(FTexel2X2{ 0xFF, 0, 0, 0xFF }, FTexel4X4{ { { 0xFF, 0x04, 0,	   0    },
+																   { 0x04, 0,	 0,	   0    },
+																   { 0,	   0,	 0,	   0x04 },
+																   { 0,	   0,	 0x04, 0xFF } } });
 
-	UpscaleMap.Emplace(FTexel2X2{ 0, 0xFF, 0xFF, 0 }, FTexel4X4{ { { 0,	   0,	 0xFF, 0xFF },
-																   { 0,	   0,	 0,	   0xFF },
-																   { 0xFF, 0,	 0,	   0    },
-																   { 0xFF, 0xFF, 0,	   0    } } });
+	UpscaleMap.Emplace(FTexel2X2{ 0, 0xFF, 0xFF, 0 }, FTexel4X4{ { { 0,	   0,	 0x04, 0xFF },
+																   { 0,	   0,	 0,	   0x04 },
+																   { 0x04, 0,	 0,	   0    },
+																   { 0xFF, 0x04, 0,	   0    } } });
 
 	UpscaleMap.Emplace(FTexel2X2{ 0, 0xFF, 0, 0xFF }, FTexel4X4{ { { 0,	   0,	 0xFF, 0xFF },
 																   { 0,	   0,	 0xFF, 0xFF },
@@ -406,21 +409,21 @@ void FFogTexture::GenerateUpscaleMap()
 
 	UpscaleMap.Emplace(FTexel2X2{ 0xFF, 0xFF, 0xFF, 0 }, FTexel4X4{ { { 0xFF, 0xFF, 0xFF, 0xFF },
 																	  { 0xFF, 0xFF, 0xFF, 0xFF },
-																	  { 0xFF, 0xFF, 0xFF, 0xFF },
-																	  { 0xFF, 0xFF, 0xFF, 0	   } } });
+																	  { 0xFF, 0xFF, 0xFF, 0x04 },
+																	  { 0xFF, 0xFF, 0x04, 0	   } } });
 
 	UpscaleMap.Emplace(FTexel2X2{ 0xFF, 0xFF, 0, 0xFF }, FTexel4X4{ { { 0xFF, 0xFF, 0xFF, 0xFF },
 																	  { 0xFF, 0xFF, 0xFF, 0xFF },
-																	  { 0xFF, 0xFF, 0xFF, 0xFF },
-																	  { 0,	  0xFF, 0xFF, 0xFF } } });
+																	  { 0x04, 0xFF, 0xFF, 0xFF },
+																	  { 0,	  0x04, 0xFF, 0xFF } } });
 
-	UpscaleMap.Emplace(FTexel2X2{ 0xFF, 0, 0xFF, 0xFF }, FTexel4X4{ { { 0xFF, 0xFF, 0xFF, 0	   },
-																	  { 0xFF, 0xFF, 0xFF, 0xFF },
+	UpscaleMap.Emplace(FTexel2X2{ 0xFF, 0, 0xFF, 0xFF }, FTexel4X4{ { { 0xFF, 0xFF, 0x04, 0	   },
+																	  { 0xFF, 0xFF, 0xFF, 0x04 },
 																	  { 0xFF, 0xFF, 0xFF, 0xFF },
 																	  { 0xFF, 0xFF, 0xFF, 0xFF } } });
 
-	UpscaleMap.Emplace(FTexel2X2{ 0, 0xFF, 0xFF, 0xFF }, FTexel4X4{ { { 0,	  0xFF,	0xFF, 0xFF },
-																	  { 0xFF, 0xFF, 0xFF, 0xFF },
+	UpscaleMap.Emplace(FTexel2X2{ 0, 0xFF, 0xFF, 0xFF }, FTexel4X4{ { { 0,	  0x04,	0xFF, 0xFF },
+																	  { 0x04, 0xFF, 0xFF, 0xFF },
 																	  { 0xFF, 0xFF, 0xFF, 0xFF },
 																	  { 0xFF, 0xFF, 0xFF, 0xFF } } });
 

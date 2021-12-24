@@ -13,7 +13,12 @@ struct FTexel2X2
 	}
 	uint8 T[4];
 };
-uint32 GetTypeHash(const FTexel2X2& Texel);
+uint32 GetTypeHash(const FTexel2X2& Texel); // TMap을 사용하기 위한 커스텀 해시 함수
+
+struct FTexel4X4
+{
+	uint8 T[4][4];
+};
 
 class FOGOFWAR_API FFogTexture
 {
@@ -31,12 +36,7 @@ class FOGOFWAR_API FFogTexture
 		int8 XX, XY, YX, YY;
 	};
 
-	struct FTexel4X4
-	{
-		uint8 T[4][4];
-	};
-
-	static constexpr uint8 ExploredFogColor = 0x04;
+	static constexpr uint8 ExploredFogColor = 4;
 
 public:
 	FFogTexture();
@@ -52,6 +52,7 @@ public:
 
 	void UpdateFogTexture();
 
+	/** 업스케일 버퍼로 생성한 텍스처입니다. */
 	UPROPERTY(Category = "Fog Texture", BlueprintReadOnly, Transient)
 	class UTexture2D* FogTexture = nullptr;
 
@@ -73,26 +74,33 @@ private:
 	*/
 	void DrawShadowCastingFog(const FIntPoint& Center, int Radius, int Row, float Start, float End, const FOctantTransform& T, TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked);
 
+	/** Target이 Center를 중심으로 하는 원 안에 있는지 확인합니다. */
 	bool IsInRadius(const FIntPoint& Center, const FIntPoint& Target, int Radius) const;
 
+	/** (X,Y), (X+1,Y), (X,Y+1), (X+1,Y+1) 텍셀을 가져옵니다. */
 	FTexel2X2 GetTexel2X2(int X, int Y);
 
+	/** 타일맵과 연동하여 안개 상태를 업데이트하는 버퍼입니다. */
 	uint8* SourceBuffer = nullptr;
 	uint32 SourceBufferSize = 0;
 	int SourceWidth = 0;
 	int SourceHeight = 0;
 
+	/** SourceBuffer를 4배 확대한 버퍼입니다. */
 	uint8* UpscaleBuffer = nullptr;
 	uint32 UpscaleBufferSize = 0;
 	int UpscaleWidth = 0;
 	int UpscaleHeight = 0;
 	FUpdateTextureRegion2D UpscaleUpdateRegion;
 
+	/** 탐사했던 타일을 회색으로 만드는데 사용합니다. */
 	uint8* ExploredBuffer = nullptr;
 
+	/** 모든 8분면에 섀도 캐스팅 알고리즘을 적용하기 위한 변환 구조체입니다. */
 	UPROPERTY()
 	TArray<FOctantTransform> OctantTransforms;
 
+	/** 2X2 텍셀을 4X4 텍셀로 어떻게 맵핑할지 저장해 놓은 템플릿입니다. */
 	UPROPERTY()
 	TMap<FTexel2X2, FTexel4X4> UpscaleMap;
 };

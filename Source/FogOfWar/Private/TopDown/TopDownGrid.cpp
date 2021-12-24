@@ -58,7 +58,6 @@ void ATopDownGrid::BeginPlay()
 	Super::BeginPlay();
 
 	UpdateGridTransform();
-
 	GenerateTileData();
 }
 
