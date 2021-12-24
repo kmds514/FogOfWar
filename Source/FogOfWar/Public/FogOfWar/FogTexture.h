@@ -5,6 +5,16 @@
 #include "CoreMinimal.h"
 #include "Rendering/Texture2DResource.h"
 
+struct FTexel2X2
+{
+	bool operator==(const FTexel2X2& Rhs) const
+	{
+		return T[0] == Rhs.T[0] && T[1] == Rhs.T[1] && T[2] == Rhs.T[2] && T[3] == Rhs.T[3];
+	}
+	uint8 T[4];
+};
+uint32 GetTypeHash(const FTexel2X2& Texel);
+
 class FOGOFWAR_API FFogTexture
 {
 	struct FFogTextureContext
@@ -20,6 +30,13 @@ class FOGOFWAR_API FFogTexture
 	{
 		int8 XX, XY, YX, YY;
 	};
+
+	struct FTexel4X4
+	{
+		uint8 T[4][4];
+	};
+
+	static constexpr uint8 ExploredFogColor = 0x04;
 
 public:
 	FFogTexture();
@@ -39,6 +56,9 @@ public:
 	class UTexture2D* FogTexture = nullptr;
 
 private:
+	/** https://technology.riotgames.com/sites/default/files/fow_diagram.png */
+	void GenerateUpscaleMap();
+
 	void UpdateUpscaleBuffer();
 
 	/** https://en.wikipedia.org/wiki/Midpoint_circle_algorithm */
@@ -47,7 +67,6 @@ private:
 	void CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End, TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked);
 
 	/*
-	* http://www.adammil.net/blog/v125_Roguelike_Vision_Algorithms.html
 	* http://www.roguebasin.com/index.php?title=Improved_Shadowcasting_in_Java
 	* https://www.albertford.com/shadowcasting/
 	* https://m.blog.naver.com/dunkydonk/220214116723
@@ -56,9 +75,7 @@ private:
 
 	bool IsInRadius(const FIntPoint& Center, const FIntPoint& Target, int Radius) const;
 
-	/** https://technology.riotgames.com/sites/default/files/fow_diagram.png */
-	TArray<uint8> GetTexel2X2(int Width, int Height);
-	TArray<TArray<uint8>> GetTexel4X4(const TArray<uint8>& Texel2X2);
+	FTexel2X2 GetTexel2X2(int X, int Y);
 
 	uint8* SourceBuffer = nullptr;
 	uint32 SourceBufferSize = 0;
@@ -71,6 +88,11 @@ private:
 	int UpscaleHeight = 0;
 	FUpdateTextureRegion2D UpscaleUpdateRegion;
 
+	uint8* ExploredBuffer = nullptr;
+
 	UPROPERTY()
 	TArray<FOctantTransform> OctantTransforms;
+
+	UPROPERTY()
+	TMap<FTexel2X2, FTexel4X4> UpscaleMap;
 };

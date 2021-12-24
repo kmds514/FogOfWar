@@ -87,7 +87,7 @@ private:
 
 	/** Number of tiles and Number of fog texel. 
 	* Tile extent = GridVolumeExtentXY / GridResoulution */
-	UPROPERTY(Category = "Config", EditAnywhere, meta = (ClampMin = 4, ClampMax = 256, UIMin = 4, UIMax = 256))
+	UPROPERTY(Category = "Config", EditAnywhere, meta = (ClampMin = 4, ClampMax = 512, UIMin = 4, UIMax = 512))
 	int GridResolution = 128;
 
 	UPROPERTY(Category = "Config", EditAnywhere)
