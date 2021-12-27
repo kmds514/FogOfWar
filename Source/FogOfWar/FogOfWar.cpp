@@ -3,4 +3,10 @@
 #include "FogOfWar.h"
 #include "Modules/ModuleManager.h"
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, FogOfWar, "FogOfWar" );
+void FFogOfWarModule::StartupModule()
+{
+	FString ShaderDirectory = FPaths::Combine(FPaths::ProjectDir(), TEXT("Shaders"));
+	AddShaderSourceDirectoryMapping("/Project", ShaderDirectory);
+}
+
+IMPLEMENT_PRIMARY_GAME_MODULE( FFogOfWarModule, FogOfWar, "FogOfWar" );
