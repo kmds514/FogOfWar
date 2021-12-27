@@ -45,10 +45,11 @@ void ATopDownGrid::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
+	UpdateGridTransform();
+	GenerateTileData();
+
 	if (bDebugGrid)
 	{
-		UpdateGridTransform();
-		GenerateTileData();
 		DrawDebugGrid();
 	}
 }
