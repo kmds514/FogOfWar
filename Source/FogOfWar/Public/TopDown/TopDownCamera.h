@@ -69,7 +69,7 @@ protected:
 	float InterpSpeed = 10.0f;
 
 	UPROPERTY(Category = "Camera Zoom", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "2", ClampMax = "16", UIMin = "2", UIMax = "16"))
-	int NumberOfZoomLevel = 6;
+	int NumberOfZoomLevel = 5;
 
 private:
 	float TargetDistance = 0.0f;
