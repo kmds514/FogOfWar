@@ -8,7 +8,7 @@ public class FogOfWar : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "AIModule", "NavigationSystem", "GameplayTasks", "RHI", "RenderCore" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "AIModule", "NavigationSystem", "GameplayTasks", "RHI" , "RenderCore" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

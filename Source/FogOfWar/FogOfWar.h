@@ -4,8 +4,3 @@
 
 #include "CoreMinimal.h"
 
-class FFogOfWarModule : public IModuleInterface
-{
-public:
-	virtual void StartupModule() override;
-};
