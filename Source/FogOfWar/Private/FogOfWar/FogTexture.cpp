@@ -84,6 +84,7 @@ void FFogTexture::ReleaseFogTexture()
 
 void FFogTexture::UpdateExploredFog()
 {
+	// Reset SourceBuffer
 	for (uint32 i = 0; i < SourceBufferSize; ++i)
 	{
 		if (SourceBuffer[i] > 0)
@@ -92,6 +93,7 @@ void FFogTexture::UpdateExploredFog()
 		}
 	}
 
+	// Update ExploredBuffer
 	for (uint32 i = 0; i < UpscaleBufferSize; ++i)
 	{
 		if (UpscaleBuffer[i] > 0)
@@ -119,21 +121,24 @@ void FFogTexture::UpdateFogBuffer(const FIntPoint& Center, int Radius, TFunction
 
 void FFogTexture::UpdateFogTexture()
 {
-	FFogTextureContext* FogTextureContext = new FFogTextureContext();
-	FogTextureContext->TextureResource = (FTexture2DResource*)FogTexture->Resource;
-	FogTextureContext->MipIndex = FogTextureContext->TextureResource->GetCurrentFirstMip();
-	FogTextureContext->UpdateRegion = &UpscaleUpdateRegion;
-	FogTextureContext->SourcePitch = UpscaleUpdateRegion.Width;
-	FogTextureContext->SourceData = new uint8[UpscaleBufferSize];
-	FMemory::Memcpy(FogTextureContext->SourceData, UpscaleBuffer, UpscaleBufferSize);
+	FUpdateTextureContext* UpdateTextureContext = new FUpdateTextureContext();
+	UpdateTextureContext->TextureResource = (FTexture2DResource*)FogTexture->Resource;
+	UpdateTextureContext->MipIndex = UpdateTextureContext->TextureResource->GetCurrentFirstMip();
+	UpdateTextureContext->UpdateRegion = &UpscaleUpdateRegion;
+	UpdateTextureContext->SourcePitch = UpscaleUpdateRegion.Width;
+	UpdateTextureContext->SourceData = new uint8[UpscaleBufferSize];
+	FMemory::Memcpy(UpdateTextureContext->SourceData, UpscaleBuffer, UpscaleBufferSize);
 
-	ENQUEUE_RENDER_COMMAND(UpdateTexture)([FogTextureContext](FRHICommandListImmediate& RHICmdList)
+	ENQUEUE_RENDER_COMMAND(UpdateTexture)([UpdateTextureContext](FRHICommandListImmediate& RHICmdList)
 		{
-			RHIUpdateTexture2D(FogTextureContext->TextureResource->GetTexture2DRHI(),
-				FogTextureContext->MipIndex,
-				*FogTextureContext->UpdateRegion,
-				FogTextureContext->SourcePitch,
-				FogTextureContext->SourceData);
+			RHIUpdateTexture2D(UpdateTextureContext->TextureResource->GetTexture2DRHI(),
+				UpdateTextureContext->MipIndex,
+				*UpdateTextureContext->UpdateRegion,
+				UpdateTextureContext->SourcePitch,
+				UpdateTextureContext->SourceData);
+
+			delete[] UpdateTextureContext->SourceData;
+			delete UpdateTextureContext;
 		});
 }
 
@@ -327,7 +332,7 @@ void FFogTexture::UpdateUpscaleBuffer()
 
 	for (uint32 i = 0; i < UpscaleBufferSize; ++i)
 	{
-		if (ExploredBuffer[i] > 0 && UpscaleBuffer[i] == 0)
+		if (ExploredBuffer[i] == ExploredFogColor && UpscaleBuffer[i] == 0)
 		{
 			UpscaleBuffer[i] = ExploredFogColor;
 		}

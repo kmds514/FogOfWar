@@ -24,7 +24,7 @@ public:
 
 	/** In centimeters */
 	UPROPERTY(Category = "Fog Agent", EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "0", ClampMax = "2000", UIMin = "0", UIMax = "2000"))
-	int Sight = 800;
+	int Sight = 700;
 
 private:
 	UPROPERTY()

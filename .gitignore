@@ -2,11 +2,14 @@
 .vs/
 
 # Heavy Level for testing
-StarterContent/
-Meadow_Environment_Set/
-Stylized_Forest/
 DreamscapeSeries/
+Meadow_Environment_Set/
+ModSci_Engineer/
+ModSci_EngiProps/
+ModSciInteriors/
 ModularLostRuinKit/
+StarterContent/
+Stylized_Forest/
 
 # Compiled Object files
 *.slo

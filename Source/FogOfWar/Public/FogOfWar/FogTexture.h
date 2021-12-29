@@ -22,7 +22,7 @@ struct FTexel4X4
 
 class FOGOFWAR_API FFogTexture
 {
-	struct FFogTextureContext
+	struct FUpdateTextureContext
 	{
 		FTexture2DResource* TextureResource = nullptr;
 		uint32 MipIndex = 0;
