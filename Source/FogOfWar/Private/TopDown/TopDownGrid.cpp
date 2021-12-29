@@ -46,12 +46,6 @@ void ATopDownGrid::OnConstruction(const FTransform& Transform)
 	Super::OnConstruction(Transform);
 
 	UpdateGridTransform();
-
-	if (bDebugGrid)
-	{
-		GenerateTileData();
-		DrawDebugGrid();
-	}
 }
 
 void ATopDownGrid::BeginPlay()
@@ -60,6 +54,11 @@ void ATopDownGrid::BeginPlay()
 
 	UpdateGridTransform();
 	GenerateTileData();
+
+	if (bDebugGrid)
+	{
+		DrawDebugGrid();
+	}
 }
 
 int ATopDownGrid::ToGridUnit(const int N) const
@@ -69,7 +68,7 @@ int ATopDownGrid::ToGridUnit(const int N) const
 
 void ATopDownGrid::UpdateGridTransform()
 {
-	GridResolution = FMath::Clamp<int>(FMath::RoundUpToPowerOfTwo(GridResolution), 4, 512);
+	GridResolution = FMath::Clamp<int>(FMath::RoundUpToPowerOfTwo(GridResolution), 16, 512);
 	GridShift = GridResolution / 2;
 
 	GridVolume->SetBoxExtent(FVector(GridVolumeExtentXY, GridVolumeExtentXY, GridVolumeExtentZ));
@@ -114,8 +113,7 @@ bool ATopDownGrid::CoordsLineTraceToMinusZAxis(const FIntPoint& Coords, ETraceTy
 	End.Y = Start.Y; 
 	End.Z = GridVolume->GetComponentLocation().Z - GridVolumeExtentZ;
 
-	auto DrawDebugType = bDebugLineTrace ? EDrawDebugTrace::Persistent : EDrawDebugTrace::None;
-	UKismetSystemLibrary::LineTraceSingle(GetWorld(), Start, End, TraceChannel, false, TArray<AActor*>(), DrawDebugType, OutHit, true);
+	UKismetSystemLibrary::LineTraceSingle(GetWorld(), Start, End, TraceChannel, false, TArray<AActor*>(), EDrawDebugTrace::None, OutHit, true);
 
 	return OutHit.bBlockingHit;
 }
@@ -205,6 +203,6 @@ void ATopDownGrid::DrawDebugGrid()
 		FVector Location = Tile.Value.WorldLocation;
 		Location.Z += 1.0f;
 
-		DrawDebugBox(GetWorld(), Location, TileExtent * 0.8f, FColor::Green, true);
+		DrawDebugBox(GetWorld(), Location, TileExtent * 0.8f, FColor::Green, false, DebugGridTime);
 	}
 }

@@ -83,15 +83,15 @@ private:
 	bool bDebugGrid = false;
 
 	UPROPERTY(Category = "Config", EditAnywhere)
-	bool bDebugLineTrace = false;
+	float DebugGridTime = 10.0f;
 
 	/** Number of tiles and Number of fog texel. 
 	* Tile extent = GridVolumeExtentXY / GridResoulution */
-	UPROPERTY(Category = "Config", EditAnywhere, meta = (ClampMin = 4, ClampMax = 512, UIMin = 4, UIMax = 512))
-	int GridResolution = 128;
+	UPROPERTY(Category = "Config", EditAnywhere, meta = (ClampMin = 16, ClampMax = 512, UIMin = 16, UIMax = 512))
+	int GridResolution = 256;
 
 	UPROPERTY(Category = "Config", EditAnywhere)
-	int GridVolumeExtentXY = 1024;
+	int GridVolumeExtentXY = 4096;
 
 	UPROPERTY(Category = "Config", EditAnywhere)
 	int GridVolumeExtentZ = 1024;
@@ -102,7 +102,6 @@ private:
 	UPROPERTY(Category = "Top Down Grid", VisibleDefaultsOnly)
 	class UBoxComponent* GridVolume = nullptr;
 
-	UPROPERTY(Category = "Config", VisibleAnywhere)
 	FTransform GridTransform;
 	
 	/** 그리드 좌표의 최솟값을 (0, 0)으로 하기 위한 조정값 */

@@ -36,7 +36,7 @@ class FOGOFWAR_API FFogTexture
 		int8 XX, XY, YX, YY;
 	};
 
-	static constexpr uint8 ExploredFogColor = 0x40;
+	static constexpr uint8 ExploredFogColor = 0x20;
 
 public:
 	FFogTexture();
