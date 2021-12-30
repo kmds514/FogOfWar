@@ -35,16 +35,29 @@ void UFogAgentComponent::BeginPlay()
 		UE_LOG(LogTemp, Error, TEXT("%s: FogManager must exist only one instance in world. Current instance is %d "), *Name, OutActors.Num());
 	}
 
+	if (bEnableAgent)
+	{
+		EnableFogAgent();
+	}
+}
+
+void UFogAgentComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	DisableFogAgent();
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void UFogAgentComponent::EnableFogAgent()
+{
 	if (FogManager)
 	{
 		FogManager->AddFogAgent(this);
 	}
 }
 
-void UFogAgentComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void UFogAgentComponent::DisableFogAgent()
 {
-	Super::EndPlay(EndPlayReason);
-
 	if (FogManager)
 	{
 		FogManager->RemoveFogAgent(this);

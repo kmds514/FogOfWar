@@ -19,12 +19,18 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
+	UFUNCTION(Category = "Fog Agent", BlueprintCallable)
+	void EnableFogAgent();
+	UFUNCTION(Category = "Fog Agent", BlueprintCallable)
+	void DisableFogAgent();
+
 	UFUNCTION(Category = "Fog Agent", BlueprintPure)
 	FVector GetFogAgentLocation() const;
 
-	/** In centimeters */
-	UPROPERTY(Category = "Fog Agent", EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "0", ClampMax = "2000", UIMin = "0", UIMax = "2000"))
-	int Sight = 700;
+	UPROPERTY(Category = "Fog Agent", EditAnywhere, BlueprintReadWrite)
+	bool bEnableAgent = false;
+
+	int Sight = 800;
 
 private:
 	UPROPERTY()

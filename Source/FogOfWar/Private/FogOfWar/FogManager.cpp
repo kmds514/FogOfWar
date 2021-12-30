@@ -57,7 +57,7 @@ void AFogManager::AddFogAgent(UFogAgentComponent* const FogAgent)
 {
 	if (FogAgent)
 	{
-		FogAgents.Add(FogAgent);
+		FogAgents.AddUnique(FogAgent);
 
 		FString Name;
 		GetName(Name);
