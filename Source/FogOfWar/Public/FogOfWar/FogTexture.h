@@ -52,6 +52,8 @@ public:
 
 	void UpdateFogTexture();
 
+	bool IsRevealed(const FIntPoint& Coords);
+
 	/** 업스케일 버퍼로 생성한 텍스처입니다. */
 	UPROPERTY(Category = "Fog Texture", BlueprintReadOnly, Transient)
 	class UTexture2D* FogTexture = nullptr;

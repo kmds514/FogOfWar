@@ -5,6 +5,9 @@
 #include "FogOfWar/FogAgentComponent.h"
 #include "FogOfWar/FogTexture.h"
 
+#include "TopDown/TopDownGameState.h"
+#include "TopDown/TopDownUnit.h"
+
 #include "Kismet/GameplayStatics.h"
 #include "Rendering/Texture2DResource.h"
 #include "DrawDebugHelpers.h"
@@ -21,26 +24,30 @@ void AFogManager::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (GetWorld() == nullptr)
+	{
+		return;
+	}
+
 	TArray<AActor*> OutActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATopDownGrid::StaticClass(), OutActors);
 	if (OutActors.Num() == 1)
 	{
 		TopDownGrid = Cast<ATopDownGrid>(OutActors[0]);
-
-		FString Name;
-		GetName(Name);
-		UE_LOG(LogTemp, Log, TEXT("%s: Successfully get TopDownGrid."), *Name);
 	}
 	else
 	{
 		FString Name;
 		GetName(Name);
 		UE_LOG(LogTemp, Error, TEXT("%s: TopDownGrid must exist only one instance in world. Current instance is %d "), *Name, OutActors.Num());
+		return;
 	}
 	GridResolution = TopDownGrid->GetGridResolution();
 
 	FogTexture = new FFogTexture();
 	FogTexture->InitFogTexture(GridResolution);
+
+	TopDownGameState = Cast<ATopDownGameState>(UGameplayStatics::GetGameState(GetWorld()));
 
 	GetWorldTimerManager().SetTimer(FogUpdateTimer, this, &AFogManager::UpdateFog, 1.0f / static_cast<float>(FogUpdateInterval), true, 0.5f);
 }
@@ -91,6 +98,25 @@ void AFogManager::UpdateFog()
 		return;
 	}
 
+	UpdateFogTexture();
+
+	// 안개에 따른 유닛 가시성 업데이트
+	for (auto Unit : TopDownGameState->AllUnits)
+	{
+		const FIntPoint& UnitCoords =  TopDownGrid->WorldToGrid(Unit->GetActorLocation());
+		if (FogTexture->IsRevealed(UnitCoords))
+		{
+			Unit->SetActorHiddenInGame(false);
+		}
+		else
+		{
+			Unit->SetActorHiddenInGame(true);
+		}
+	}
+}
+
+void AFogManager::UpdateFogTexture()
+{
 	FogTexture->UpdateExploredFog();
 
 	for (auto Agent : FogAgents)

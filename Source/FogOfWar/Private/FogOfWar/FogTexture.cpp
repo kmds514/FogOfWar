@@ -353,6 +353,12 @@ FTexel2X2 FFogTexture::GetTexel2X2(int X, int Y)
 	return Texel;
 }
 
+bool FFogTexture::IsRevealed(const FIntPoint& Coords)
+{
+	uint32 Index = Coords.Y * SourceWidth + Coords.X;
+	return SourceBuffer[Index] == 0xFF;
+}
+
 void FFogTexture::GenerateUpscaleMap()
 {
 	UpscaleMap.Reserve(16);

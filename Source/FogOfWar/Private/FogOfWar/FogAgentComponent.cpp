@@ -23,16 +23,13 @@ void UFogAgentComponent::BeginPlay()
 	if (OutActors.Num() == 1)
 	{
 		FogManager = Cast<AFogManager>(OutActors[0]);
-
-		FString Name;
-		GetName(Name);
-		UE_LOG(LogTemp, Log, TEXT("%s: Successfully get FogManager."), *Name);
 	}
 	else
 	{
 		FString Name;
 		GetName(Name);
 		UE_LOG(LogTemp, Error, TEXT("%s: FogManager must exist only one instance in world. Current instance is %d "), *Name, OutActors.Num());
+		return;
 	}
 
 	if (bEnableAgent)

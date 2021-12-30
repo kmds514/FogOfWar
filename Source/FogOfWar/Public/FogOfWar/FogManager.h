@@ -31,12 +31,16 @@ public:
 
 protected:
 	void UpdateFog();
+	void UpdateFogTexture();
 
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	class ATopDownGrid* TopDownGrid = nullptr;
 
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	TArray<UFogAgentComponent*> FogAgents;
+
+	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
+	class ATopDownGameState* TopDownGameState = nullptr;
 
 	/** Number of fog updates per second */
 	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "1", ClampMax ="60", UIMin = "1", UIMax = "60"))
