@@ -16,8 +16,6 @@ void ATopDownGameState::BeginPlay()
 	{
 		AllUnits.Add(Cast<ATopDownUnit>(Actor));
 	}
-
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::FromInt(AllUnits.Num()));
 }
 
 void ATopDownGameState::AddUnit(ATopDownUnit* const Unit)

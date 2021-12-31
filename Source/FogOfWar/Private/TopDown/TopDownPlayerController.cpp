@@ -10,6 +10,11 @@ void ATopDownPlayerController::BeginPlay()
     Super::BeginPlay();
 
 	TopDownCamera = GetPawn<ATopDownCamera>();
+
+	FInputModeGameAndUI InputMode = {};
+	InputMode.SetHideCursorDuringCapture(false);
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+	SetInputMode(InputMode);
 }
 
 void ATopDownPlayerController::Tick(float DeltaTime)

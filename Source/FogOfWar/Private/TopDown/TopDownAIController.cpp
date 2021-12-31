@@ -17,14 +17,14 @@ void ATopDownAIController::BeginPlay()
 
 ETeamAttitude::Type ATopDownAIController::GetTeamAttitudeTowards(const AActor& Other) const
 {
-    // 액터가 폰인지 확인
+    // 액터가 폰인지 확인합니다.
     const APawn* OtherPawn = Cast<APawn>(&Other);
     if (OtherPawn == nullptr)
     {
         return ETeamAttitude::Neutral;
     }
 
-    // 액터가 IGenericTeamAgentInterface를 구현했는지 확인
+    // 액터가 IGenericTeamAgentInterface를 구현했는지 확인합니다.
     const IGenericTeamAgentInterface* IBot = Cast<IGenericTeamAgentInterface>(OtherPawn->GetController());
     if (IBot == nullptr)
     {
@@ -35,7 +35,6 @@ ETeamAttitude::Type ATopDownAIController::GetTeamAttitudeTowards(const AActor& O
     FGenericTeamId OtherTeamId = IBot->GetGenericTeamId();
 
     // OtherActor에 대한 태도를 결정합니다.
-    
     if (TeamId == OtherTeamId)
     {
         return ETeamAttitude::Friendly;
