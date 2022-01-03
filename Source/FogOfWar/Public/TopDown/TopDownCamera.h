@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Pawn.h"
+#include "GameFramework/Character.h"
 #include "TopDownCamera.generated.h"
 
 UCLASS()
-class FOGOFWAR_API ATopDownCamera : public APawn
+class FOGOFWAR_API ATopDownCamera : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -24,6 +24,9 @@ public:
 	void OnMoveForward(float Value);
 	void OnMoveRight(float Value);
 	void OnZoomCamera(float Value);
+
+	UFUNCTION(Category = "Top Down Camera", BlueprintPure)
+	class UCapsuleComponent* GetCollisionComponent() const;
 
 protected:
 	UPROPERTY(Category = "Top Down Camera", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "200.0", ClampMax = "2000.0", UIMin = "200.0", UIMax = "2000.0"))
@@ -58,16 +61,10 @@ protected:
 
 private:
 	UPROPERTY(Category = "Top Down Camera", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class USphereComponent* Collision = nullptr;
-
-	UPROPERTY(Category = "Top Down Camera", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* Handle = nullptr;
 
 	UPROPERTY(Category = "Top Down Camera", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* Camera = nullptr;
-
-	UPROPERTY(Category = "Top Down Camera", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UFloatingPawnMovement* Movement = nullptr;
 
 	FVector2D MousePosition;
 

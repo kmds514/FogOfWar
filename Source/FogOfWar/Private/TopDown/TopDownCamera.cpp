@@ -2,10 +2,10 @@
 
 
 #include "TopDown/TopDownCamera.h"
-#include "Components/SphereComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "GameFramework/FloatingPawnMovement.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 ATopDownCamera::ATopDownCamera()
@@ -13,17 +13,12 @@ ATopDownCamera::ATopDownCamera()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	Collision = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
-	RootComponent = Collision;
-
 	Handle = CreateDefaultSubobject<USpringArmComponent>("Handle");
-	Handle->SetupAttachment(Collision);
+	Handle->SetupAttachment(GetCapsuleComponent());
 	Handle->bDoCollisionTest = false;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(Handle);
-
-	Movement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("FloatingPawnMovement"));
 }
 
 void ATopDownCamera::BeginPlay()
@@ -38,7 +33,7 @@ void ATopDownCamera::BeginPlay()
 	Handle->TargetArmLength = TargetDistance;
 	Camera->FieldOfView = TargetFOV;
 	Handle->SetRelativeRotation(FRotator(-TargetPitch, 0.0f, 0.0f));
-	Movement->MaxSpeed = TargetSpeed;
+	GetCharacterMovement()->MaxFlySpeed = TargetSpeed;
 }
 
 // Called to bind functionality to input
@@ -92,7 +87,7 @@ void ATopDownCamera::OnZoomCamera(float Value)
 	Handle->TargetArmLength = InterpValue(MinDistance, MaxDistance, Handle->TargetArmLength, TargetDistance);
 
 	// 카메라 이동 속도 보간
-	Movement->MaxSpeed = InterpValue(MinSpeed, MaxSpeed, Movement->MaxSpeed, TargetSpeed);
+	GetCharacterMovement()->MaxFlySpeed = InterpValue(MinSpeed, MaxSpeed, GetCharacterMovement()->MaxFlySpeed, TargetSpeed);
 
 	// 각도 저장
 	FRotator Rotation = Handle->GetRelativeRotation();
@@ -119,4 +114,9 @@ void ATopDownCamera::OnZoomCamera(float Value)
 	// FOV 선형보간
 	FOV = FMath::FInterpTo(FOV, TargetFOV, GetWorld()->GetDeltaSeconds(), InterpSpeed);
 	Camera->FieldOfView = FOV;
+}
+
+UCapsuleComponent* ATopDownCamera::GetCollisionComponent() const
+{
+	return GetCapsuleComponent();
 }
