@@ -88,7 +88,10 @@ void ATopDownCamera::OnZoomCamera(float Value)
 		return FMath::FInterpTo(Current, Target, GetWorld()->GetDeltaSeconds(), InterpSpeed);
 	};
 
+	// 카메라 확대/축소 보간
 	Handle->TargetArmLength = InterpValue(MinDistance, MaxDistance, Handle->TargetArmLength, TargetDistance);
+
+	// 카메라 이동 속도 보간
 	Movement->MaxSpeed = InterpValue(MinSpeed, MaxSpeed, Movement->MaxSpeed, TargetSpeed);
 
 	// 각도 저장
