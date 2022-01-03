@@ -98,21 +98,11 @@ void AFogManager::UpdateFog()
 		return;
 	}
 
+	// 안개 텍스처 업데이트
 	UpdateFogTexture();
 
 	// 안개에 따른 유닛 가시성 업데이트
-	for (auto Unit : TopDownGameState->AllUnits)
-	{
-		const FIntPoint& UnitCoords =  TopDownGrid->WorldToGrid(Unit->GetActorLocation());
-		if (FogTexture->IsRevealed(UnitCoords))
-		{
-			Unit->SetActorHiddenInGame(false);
-		}
-		else
-		{
-			Unit->SetActorHiddenInGame(true);
-		}
-	}
+	UpdateUnitVisibility();
 }
 
 void AFogManager::UpdateFogTexture()
@@ -131,6 +121,22 @@ void AFogManager::UpdateFogTexture()
 		FogTexture->UpdateFogBuffer(AgentCoords, AgentSight, TopDownGrid->IsBlocked);
 	}
 	FogTexture->UpdateFogTexture();
+}
+
+void AFogManager::UpdateUnitVisibility()
+{
+	for (auto Unit : TopDownGameState->AllUnits)
+	{
+		const FIntPoint& UnitCoords = TopDownGrid->WorldToGrid(Unit->GetActorLocation());
+		if (FogTexture->IsRevealed(UnitCoords))
+		{
+			Unit->SetActorHiddenInGame(false);
+		}
+		else
+		{
+			Unit->SetActorHiddenInGame(true);
+		}
+	}
 }
 
 UTexture2D* AFogManager::GetFogTexture() const

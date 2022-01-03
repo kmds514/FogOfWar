@@ -23,13 +23,16 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION(Category = "Top Down", BlueprintPure)
+	UFUNCTION(Category = "Top Down Player Controller", BlueprintPure)
 	EEdgeLocation GetMouseEdgeLocation() const;
 
 private:
 	EEdgeLocation CheckEdgeMovement();
 
-	UPROPERTY(Category = "Top Down", BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Category = "Top Down Player Controller", BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	uint8 TeamId = 0;
+
+	UPROPERTY(Category = "Top Down Player Controller", BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class ATopDownCamera* TopDownCamera = nullptr;
 
 	FVector2D MouseLocation;

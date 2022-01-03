@@ -32,6 +32,7 @@ public:
 protected:
 	void UpdateFog();
 	void UpdateFogTexture();
+	void UpdateUnitVisibility();
 
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	class ATopDownGrid* TopDownGrid = nullptr;
