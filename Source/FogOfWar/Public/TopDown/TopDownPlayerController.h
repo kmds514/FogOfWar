@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "TopDownPlayerController.generated.h"
 
+class ATopDownUnit;
+
 UENUM(BlueprintType)
 enum class EEdgeLocation : uint8
 {
@@ -23,14 +25,26 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION(Category = "Top Down Player Controller", BlueprintCallable)
+	void AddOwningUnit(ATopDownUnit* const Unit);
+
+	UFUNCTION(Category = "Top Down Player Controller", BlueprintCallable)
+	void RemoveOwningUnit(ATopDownUnit* const Actor);
+
 	UFUNCTION(Category = "Top Down Player Controller", BlueprintPure)
 	EEdgeLocation GetMouseEdgeLocation() const;
 
+	UFUNCTION(Category = "Top Down Player Controller", BlueprintPure)
+	bool IsOwningUnit(AActor* const Unit) const;
+
+	UPROPERTY(Category = "Top Down Game State", BlueprintReadOnly)
+	TArray<ATopDownUnit*> OwningUnits;
+
+	UPROPERTY(Category = "Top Down Player Controller", VisibleAnywhere, BlueprintReadWrite)
+	uint8 TeamId = 0;
+
 private:
 	EEdgeLocation CheckEdgeMovement();
-
-	UPROPERTY(Category = "Top Down Player Controller", BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	uint8 TeamId = 0;
 
 	UPROPERTY(Category = "Top Down Player Controller", BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class ATopDownCamera* TopDownCamera = nullptr;

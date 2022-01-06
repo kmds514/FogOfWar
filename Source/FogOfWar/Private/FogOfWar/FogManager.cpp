@@ -2,24 +2,21 @@
 
 
 #include "FogOfWar/FogManager.h"
-#include "FogOfWar/FogAgentComponent.h"
 #include "FogOfWar/FogTexture.h"
 
-#include "TopDown/TopDownGameState.h"
+#include "TopDown/TopDownPlayerController.h"
 #include "TopDown/TopDownUnit.h"
+#include "TopDown/TopDownGameState.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "Rendering/Texture2DResource.h"
 #include "DrawDebugHelpers.h"
 
-// Sets default values
 AFogManager::AFogManager()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 }
 
-// Called when the game starts or when spawned
 void AFogManager::BeginPlay()
 {
 	Super::BeginPlay();
@@ -47,8 +44,6 @@ void AFogManager::BeginPlay()
 	FogTexture = new FFogTexture();
 	FogTexture->InitFogTexture(GridResolution);
 
-	TopDownGameState = Cast<ATopDownGameState>(UGameplayStatics::GetGameState(GetWorld()));
-
 	GetWorldTimerManager().SetTimer(FogUpdateTimer, this, &AFogManager::UpdateFog, 1.0f / static_cast<float>(FogUpdateInterval), true, 0.5f);
 }
 
@@ -60,35 +55,9 @@ void AFogManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-void AFogManager::AddFogAgent(UFogAgentComponent* const FogAgent)
+void AFogManager::Tick(float DeltaSeconds)
 {
-	if (FogAgent)
-	{
-		FogAgents.AddUnique(FogAgent);
-
-		FString Name;
-		GetName(Name);
-		UE_LOG(LogTemp, Log, TEXT("%s: Added fog agent"), *Name);
-
-	}
-	else
-	{
-		FString Name;
-		GetName(Name);
-		UE_LOG(LogTemp, Warning, TEXT("%s: Invalid fog agent"), *Name);
-	}
-}
-
-void AFogManager::RemoveFogAgent(UFogAgentComponent* const FogAgent)
-{
-	if (FogAgent)
-	{
-		FogAgents.Remove(FogAgent);
-
-		FString Name;
-		GetName(Name);
-		UE_LOG(LogTemp, Log, TEXT("%s: Removed fog agent"), *Name);
-	}
+	Super::Tick(DeltaSeconds);
 }
 
 void AFogManager::UpdateFog()
@@ -109,32 +78,69 @@ void AFogManager::UpdateFogTexture()
 {
 	FogTexture->UpdateExploredFog();
 
-	for (auto Agent : FogAgents)
+	// PC가 소유한 유닛들만 시야 계산
+	auto TopDownPC = Cast<ATopDownPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	if (TopDownPC == nullptr)
 	{
-		if (Agent == nullptr)
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, TEXT("Invalid TopDownPC"));
+		return;
+	}
+	for (auto Unit : TopDownPC->OwningUnits)
+	{
+		if (Unit == nullptr)
 		{
 			continue;
 		}
 
-		const FIntPoint& AgentCoords = TopDownGrid->WorldToGrid(Agent->GetFogAgentLocation());
-		const int AgentSight = TopDownGrid->ToGridUnit(Agent->Sight);
-		FogTexture->UpdateFogBuffer(AgentCoords, AgentSight, TopDownGrid->IsBlocked);
+		const FIntPoint& UnitCoords = TopDownGrid->WorldToGrid(Unit->GetActorLocation());
+		const int UnitSight = TopDownGrid->ToGridUnit(Unit->Sight);
+		FogTexture->UpdateFogBuffer(UnitCoords, UnitSight, TopDownGrid->IsBlocked);
 	}
+
 	FogTexture->UpdateFogTexture();
 }
 
 void AFogManager::UpdateUnitVisibility()
 {
-	for (auto Unit : TopDownGameState->AllUnits)
+	// Get TopDownGS
+	auto TopDownGS = Cast<ATopDownGameState>(UGameplayStatics::GetGameState(GetWorld()));
+	if (TopDownGS == nullptr)
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, TEXT("Invalid TopDownGS"));
+		return;
+	}
+
+	// Get TopDownPC
+	auto TopDownPC = Cast<ATopDownPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	if (TopDownPC == nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, TEXT("Invalid TopDownPC"));
+		return;
+	}
+
+	// 모든 TopDownUnit 순회
+	for (auto Unit : TopDownGS->AllUnits)
+	{
+		if (Unit == nullptr)
+		{
+			continue;
+		}
+
+		// PC와 같은 팀 유닛이면 가시성 검사 안함
+		if (Unit->GetGenericTeamId() == TopDownPC->TeamId)
+		{
+			continue;
+		}
+
+		// 다른 팀 유닛이면 그 유닛의 그리드 좌표를 확인하여 유닛의 가시성 결정
 		const FIntPoint& UnitCoords = TopDownGrid->WorldToGrid(Unit->GetActorLocation());
 		if (FogTexture->IsRevealed(UnitCoords))
 		{
-			Unit->SetActorHiddenInGame(false);
+			//TopDownGS->Client_SetUnitHiddenInGame(Unit, false);
 		}
 		else
 		{
-			Unit->SetActorHiddenInGame(true);
+			//TopDownGS->Client_SetUnitHiddenInGame(Unit, false);
 		}
 	}
 }

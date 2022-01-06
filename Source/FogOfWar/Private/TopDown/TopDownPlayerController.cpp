@@ -4,6 +4,9 @@
 #include "TopDown/TopDownPlayerController.h"
 #include "TopDown/TopDownCamera.h"
 #include "TopDown/TopDownHUD.h"
+#include "TopDown/TopDownUnit.h"
+#include "TopDown/TopDownGameState.h"
+#include "Kismet/GameplayStatics.h"
 
 void ATopDownPlayerController::BeginPlay()
 {
@@ -15,6 +18,24 @@ void ATopDownPlayerController::BeginPlay()
 	InputMode.SetHideCursorDuringCapture(false);
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	SetInputMode(InputMode);
+
+	// Get TopDownGS
+	auto TopDownGS = Cast<ATopDownGameState>(UGameplayStatics::GetGameState(GetWorld()));
+	if (TopDownGS == nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, TEXT("Invalid TopDownGS"));
+		return;
+	}
+
+	// 모든 TopDownUnit 순회
+	for (auto Unit : TopDownGS->AllUnits)
+	{
+		// PC와 같은 팀 유닛만 OwningUnits에 추가
+		if (Unit->GetGenericTeamId() == TeamId)
+		{
+			OwningUnits.Add(Unit);
+		}
+	}
 }
 
 void ATopDownPlayerController::Tick(float DeltaTime)
@@ -27,9 +48,29 @@ void ATopDownPlayerController::Tick(float DeltaTime)
     }
 }
 
+void ATopDownPlayerController::AddOwningUnit(ATopDownUnit* const Unit)
+{
+	OwningUnits.Add(Unit);
+}
+
+void ATopDownPlayerController::RemoveOwningUnit(ATopDownUnit* const Unit)
+{
+	OwningUnits.Remove(Unit);
+}
+
 EEdgeLocation ATopDownPlayerController::GetMouseEdgeLocation() const
 {
     return EdgeLocation;
+}
+
+bool ATopDownPlayerController::IsOwningUnit(AActor* const Actor) const
+{
+	auto Unit = Cast<ATopDownUnit>(Actor);
+	if (Unit)
+	{
+		return Unit->GetGenericTeamId() == TeamId;
+	}
+	return false;
 }
 
 EEdgeLocation ATopDownPlayerController::CheckEdgeMovement()
