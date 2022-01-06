@@ -23,7 +23,7 @@ void ATopDownPlayerController::BeginPlay()
 	auto TopDownGS = Cast<ATopDownGameState>(UGameplayStatics::GetGameState(GetWorld()));
 	if (TopDownGS == nullptr)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, TEXT("Invalid TopDownGS"));
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString(__FUNCTION__) + TEXT(" - Invalid TopDownGS"));
 		return;
 	}
 
@@ -38,14 +38,73 @@ void ATopDownPlayerController::BeginPlay()
 	}
 }
 
-void ATopDownPlayerController::Tick(float DeltaTime)
+void ATopDownPlayerController::PlayerTick(float DeltaTime)
 {
-    Super::Tick(DeltaTime);
+	Super::PlayerTick(DeltaTime);
 
-    if (TopDownCamera)
-    {
-        EdgeLocation = CheckEdgeMovement();
-    }
+	if (TopDownCamera)
+	{
+		EdgeLocation = CheckEdgeMovement();
+	}
+}
+
+void ATopDownPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	InputComponent->BindAction("LeftMouseButton", IE_Pressed, this, &ATopDownPlayerController::OnLeftMouseButtonPressed);
+	InputComponent->BindAction("LeftMouseButton", IE_Released, this, &ATopDownPlayerController::OnLeftMouseButtonReleased);
+}
+
+void ATopDownPlayerController::OnLeftMouseButtonPressed()
+{
+	auto TopDownHUD = GetHUD<ATopDownHUD>();
+	if (TopDownHUD == nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString(__FUNCTION__) + TEXT(" - Invalid TopDownHUD"));
+		return;
+	}
+	TopDownHUD->BeginDrawRect();
+
+
+	if (TopDownCamera == nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString(__FUNCTION__) + TEXT(" - Invalid TopDownCamera"));
+		return;
+	}
+	TopDownCamera->DisableInput(this);
+}
+
+void ATopDownPlayerController::OnLeftMouseButtonReleased()
+{
+	auto TopDownHUD = GetHUD<ATopDownHUD>();
+	if (TopDownHUD == nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString(__FUNCTION__) + TEXT(" - Invalid TopDownHUD"));
+		return;
+	}
+	TopDownHUD->EndDrawRect();
+
+
+	if (TopDownCamera == nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString(__FUNCTION__) + TEXT(" - Invalid TopDownCamera"));
+		return;
+	}
+	TopDownCamera->EnableInput(this);
+}
+
+void ATopDownPlayerController::ClearSelectedActors()
+{
+	for (auto Actor : SelectedActors)
+	{
+		auto IUnit = Cast<ITopDownUnitInterface>(Actor);
+		if (IUnit)
+		{
+			IUnit->SetSelect(false);
+		}
+	}
+	SelectedActors.Empty(SelectedActors.GetSlack());
 }
 
 void ATopDownPlayerController::AddOwningUnit(ATopDownUnit* const Unit)

@@ -93,7 +93,7 @@ void AFogManager::UpdateFogTexture()
 		}
 
 		const FIntPoint& UnitCoords = TopDownGrid->WorldToGrid(Unit->GetActorLocation());
-		const int UnitSight = TopDownGrid->ToGridUnit(Unit->Sight);
+		const int UnitSight = TopDownGrid->ToGridUnit(Unit->GetSight());
 		FogTexture->UpdateFogBuffer(UnitCoords, UnitSight, TopDownGrid->IsBlocked);
 	}
 

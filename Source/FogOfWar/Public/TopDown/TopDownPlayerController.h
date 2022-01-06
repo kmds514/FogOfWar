@@ -23,7 +23,13 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	virtual void Tick(float DeltaTime) override;
+	virtual void PlayerTick(float DeltaTime) override;
+	virtual void SetupInputComponent() override;
+
+	void OnLeftMouseButtonPressed();
+	void OnLeftMouseButtonReleased();
+
+	void ClearSelectedActors();
 
 	UFUNCTION(Category = "Top Down Player Controller", BlueprintCallable)
 	void AddOwningUnit(ATopDownUnit* const Unit);
@@ -42,6 +48,9 @@ public:
 
 	UPROPERTY(Category = "Top Down Player Controller", VisibleAnywhere, BlueprintReadWrite)
 	uint8 TeamId = 0;
+
+	UPROPERTY()
+	TArray<AActor*> SelectedActors;
 
 private:
 	EEdgeLocation CheckEdgeMovement();

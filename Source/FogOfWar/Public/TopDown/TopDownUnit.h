@@ -5,10 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "GenericTeamAgentInterface.h"
+#include "TopDown/TopDownUnitInterface.h"
 #include "TopDownUnit.generated.h"
 
 UCLASS()
-class FOGOFWAR_API ATopDownUnit : public ACharacter, public IGenericTeamAgentInterface
+class FOGOFWAR_API ATopDownUnit : public ACharacter, public IGenericTeamAgentInterface, public ITopDownUnitInterface
 {
 	GENERATED_BODY()
 
@@ -17,11 +18,29 @@ public:
 
 	virtual FGenericTeamId GetGenericTeamId() const override;
 
+	virtual void SetSelect(bool NewSelect) override;
+	virtual bool IsFriendly() const override;
+	virtual bool IsHostile() const override;
+
+	virtual void NotifyActorOnClicked(FKey ButtonPressed = EKeys::LeftMouseButton) override;
+
+	UFUNCTION(Client, Reliable)
+	void Client_SelectUnit(const FLinearColor& Color);
+	void Client_SelectUnit_Implementation(const FLinearColor& Color);
+
+	int GetSight() const;
+
+private:
+	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	uint8 TeamId = 255;
+
 	/** In centimeters */
-	UPROPERTY(Category = "Top Down Unit", EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "0", ClampMax = "2000", UIMin = "0", UIMax = "2000"))
+	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true", ClampMin = "100", ClampMax = "2000", UIMin = "100", UIMax = "2000"))
 	int Sight = 800;
 
-protected:
-	UPROPERTY(Category = "Top Down Unit", EditAnywhere, BlueprintReadWrite)
-	uint8 TeamId = 255;
+	UPROPERTY(Category = "Top Down Unit", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UDecalComponent* Selection = nullptr;
+
+	UPROPERTY(Category = "Top Down Unit", VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	class UMaterialInstanceDynamic* SelectionDMI = nullptr;
 };
