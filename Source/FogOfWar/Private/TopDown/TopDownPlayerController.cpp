@@ -19,12 +19,14 @@ void ATopDownPlayerController::BeginPlay()
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	SetInputMode(InputMode);
 	
+	// Get TopDownGS
 	TopDownGS = Cast<ATopDownGameState>(UGameplayStatics::GetGameState(GetWorld()));
 	if (TopDownGS->IsValidLowLevel() == false)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString(__FUNCTION__) + TEXT(" - Invalid TopDownGS"));
 	}
 
+	// Get OwningUnit
 	for (auto Unit : TopDownGS->AllUnits)
 	{
 		if (Unit && IsOwningUnit(Unit))

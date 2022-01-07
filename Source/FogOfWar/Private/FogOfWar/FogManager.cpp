@@ -6,6 +6,7 @@
 
 #include "TopDown/TopDownPlayerController.h"
 #include "TopDown/TopDownUnit.h"
+#include "TopDown/TopDownGameState.h"
 
 #include "Kismet/GameplayStatics.h"
 
@@ -114,6 +115,31 @@ void AFogManager::Client_UpdateUnitVisibility_Implementation()
 	}
 
 	// Get TopDownGS
+	auto TopDownGS = TopDownPC->GetTopDownGS();
+	if (TopDownGS == nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, TEXT("Invalid TopDownGS"));
+		return;
+	}
+	
+	// 모든 유닛들 중에서
+	for (auto Unit : TopDownGS->AllUnits)
+	{
+		// TopDownPC가 소유한 유닛이 아니라면
+		if (Unit && TopDownPC->IsOwningUnit(Unit) == false)
+		{
+			// 그 유닛이 있는 곳의 안개 상태를 확인하고 유닛의 가시성을 결정합니다.
+			auto Coords = TopDownGrid->WorldToGrid(Unit->GetActorLocation());
+			if (FogTexture->IsRevealed(Coords))
+			{
+				Unit->SetActorHiddenInGame(false);
+			}
+			else
+			{
+				Unit->SetActorHiddenInGame(true);
+			}
+		}
+	}
 }
 
 UTexture2D* AFogManager::GetFogTexture() const
