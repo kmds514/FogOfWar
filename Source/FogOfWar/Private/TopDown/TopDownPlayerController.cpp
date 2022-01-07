@@ -101,6 +101,10 @@ void ATopDownPlayerController::OnLeftMouseButtonReleased()
 	TopDownCamera->EnableInput(this);
 }
 
+void ATopDownPlayerController::Client_GetAllUnits_Implementation()
+{
+}
+
 void ATopDownPlayerController::ClearSelectedActors()
 {
 	for (auto Actor : SelectedActors)
