@@ -8,7 +8,6 @@
 #include "TopDown/TopDownUnit.h"
 
 #include "Kismet/GameplayStatics.h"
-//#include "Rendering/Texture2DResource.h"
 
 AFogManager::AFogManager()
 {

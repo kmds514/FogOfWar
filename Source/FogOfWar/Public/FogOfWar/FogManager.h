@@ -35,7 +35,7 @@ protected:
 	void UpdateFog();
 	void UpdateFogTexture();
 
-	UFUNCTION(Category = "Fog Manager", BlueprintImplementableEvent)
+	UFUNCTION(Category = "Fog Manager", BlueprintCallable, BlueprintImplementableEvent)
 	void UpdateUnitVisibility();
 
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
