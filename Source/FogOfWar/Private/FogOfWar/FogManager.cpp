@@ -73,7 +73,7 @@ void AFogManager::UpdateFog()
 	UpdateFogTexture();
 
 	// 안개에 따른 유닛 가시성 업데이트
-	UpdateUnitVisibility();
+	Client_UpdateUnitVisibility();
 }
 
 void AFogManager::UpdateFogTexture()
@@ -101,6 +101,19 @@ void AFogManager::UpdateFogTexture()
 	}
 
 	FogTexture->UpdateFogTexture();
+}
+
+void AFogManager::Client_UpdateUnitVisibility_Implementation()
+{
+	// Get TopDownPC
+	auto TopDownPC = Cast<ATopDownPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	if (TopDownPC == nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, TEXT("Invalid TopDownPC"));
+		return;
+	}
+
+	// Get TopDownGS
 }
 
 UTexture2D* AFogManager::GetFogTexture() const

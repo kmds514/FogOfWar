@@ -5,6 +5,7 @@
 #include "TopDown/TopDownCamera.h"
 #include "TopDown/TopDownHUD.h"
 #include "TopDown/TopDownUnit.h"
+#include "TopDown/TopDownGameState.h"
 #include "Kismet/GameplayStatics.h"
 
 void ATopDownPlayerController::BeginPlay()
@@ -17,6 +18,20 @@ void ATopDownPlayerController::BeginPlay()
 	InputMode.SetHideCursorDuringCapture(false);
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	SetInputMode(InputMode);
+	
+	TopDownGS = Cast<ATopDownGameState>(UGameplayStatics::GetGameState(GetWorld()));
+	if (TopDownGS->IsValidLowLevel() == false)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString(__FUNCTION__) + TEXT(" - Invalid TopDownGS"));
+	}
+
+	for (auto Unit : TopDownGS->AllUnits)
+	{
+		if (Unit && IsOwningUnit(Unit))
+		{
+			AddOwningUnit(Unit);
+		}
+	}
 }
 
 void ATopDownPlayerController::PlayerTick(float DeltaTime)
@@ -73,6 +88,11 @@ void ATopDownPlayerController::OnLeftMouseButtonReleased()
 		return;
 	}
 	TopDownCamera->EnableInput(this);
+}
+
+ATopDownGameState* ATopDownPlayerController::GetTopDownGS() const
+{
+	return TopDownGS;
 }
 
 void ATopDownPlayerController::ClearSelectedActors()
