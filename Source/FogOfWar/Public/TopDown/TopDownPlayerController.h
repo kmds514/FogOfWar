@@ -30,8 +30,8 @@ public:
 	void OnLeftMouseButtonReleased();
 
 	UFUNCTION(Client, Reliable)
-	void Client_GetAllUnits();
-	void Client_GetAllUnits_Implementation();
+	void Client_InitializeTopDownPC();
+	void Client_InitializeTopDownPC_Implementation();
 
 	UFUNCTION(Category = "Top Down Player Controller", BlueprintCallable)
 	void ClearSelectedActors();

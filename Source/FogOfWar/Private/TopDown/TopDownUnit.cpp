@@ -44,6 +44,11 @@ bool ATopDownUnit::IsHostile_Implementation() const
 	return TopDownPC->TeamId != TeamId;
 }
 
+void ATopDownUnit::SetUnitVisibility(bool NewVisible)
+{
+	GetMesh()->SetVisibility(NewVisible, true);
+}
+
 int ATopDownUnit::GetSight() const
 {
 	return Sight;

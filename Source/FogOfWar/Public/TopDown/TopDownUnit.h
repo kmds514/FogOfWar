@@ -21,6 +21,8 @@ public:
 	virtual bool IsFriendly_Implementation() const override;
 	virtual bool IsHostile_Implementation() const override;
 
+	void SetUnitVisibility(bool NewVisible);
+
 	int GetSight() const;
 
 private:

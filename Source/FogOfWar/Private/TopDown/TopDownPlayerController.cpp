@@ -5,6 +5,7 @@
 #include "TopDown/TopDownCamera.h"
 #include "TopDown/TopDownHUD.h"
 #include "TopDown/TopDownUnit.h"
+#include "TopDown/TopDownGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 
 void ATopDownPlayerController::BeginPlay()
@@ -17,32 +18,6 @@ void ATopDownPlayerController::BeginPlay()
 	InputMode.SetHideCursorDuringCapture(false);
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	SetInputMode(InputMode);
-
-	// 클라이언트 전용
-	if (HasAuthority() == false)
-	{
-		TArray<AActor*> OutActors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATopDownUnit::StaticClass(), OutActors);
-
-		// Get OwningUnit
-		for (auto Actor : OutActors)
-		{
-			auto Unit = Cast<ATopDownUnit>(Actor);
-			if (Unit->IsValidLowLevel() == false)
-			{
-				continue;
-			}
-
-			if (IsOwningUnit(Unit))
-			{
-				OwningUnits.Add(Unit);
-			}
-			else
-			{
-				OtherUnits.Add(Unit);
-			}
-		}
-	}
 }
 
 void ATopDownPlayerController::PlayerTick(float DeltaTime)
@@ -101,8 +76,40 @@ void ATopDownPlayerController::OnLeftMouseButtonReleased()
 	TopDownCamera->EnableInput(this);
 }
 
-void ATopDownPlayerController::Client_GetAllUnits_Implementation()
+void ATopDownPlayerController::Client_InitializeTopDownPC_Implementation()
 {
+	// Get TopDownGameInstance
+	auto TopDownGameInst = GetGameInstance<UTopDownGameInstance>();
+	if (TopDownGameInst->IsValidLowLevel() == false)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString(__FUNCTION__) + TEXT(": Invalid TopDownGameInst"));
+		return;
+	}
+
+	// TeamId 업데이트
+	TeamId = TopDownGameInst->PlayerInfo.TeamId;
+
+	TArray<AActor*> OutActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATopDownUnit::StaticClass(), OutActors);
+
+	// Get OwningUnit
+	for (auto Actor : OutActors)
+	{
+		auto Unit = Cast<ATopDownUnit>(Actor);
+		if (Unit->IsValidLowLevel() == false)
+		{
+			continue;
+		}
+
+		if (IsOwningUnit(Unit))
+		{
+			OwningUnits.Add(Unit);
+		}
+		else
+		{
+			OtherUnits.Add(Unit);
+		}
+	}
 }
 
 void ATopDownPlayerController::ClearSelectedActors()

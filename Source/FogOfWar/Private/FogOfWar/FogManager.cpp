@@ -113,18 +113,18 @@ void AFogManager::Client_UpdateUnitVisibility_Implementation()
 		return;
 	}
 	
-	// TopDownPC가 소유한 유닛 중에서
+	// TopDownPC가 소유하지 않은 유닛 중에서
 	for (auto Unit : TopDownPC->OtherUnits)
 	{
 		// 그 유닛이 있는 곳의 안개 상태를 확인하고 유닛의 가시성을 결정합니다.
 		auto Coords = TopDownGrid->WorldToGrid(Unit->GetActorLocation());
 		if (FogTexture->IsRevealed(Coords))
 		{
-			Unit->SetActorHiddenInGame(false);
+			Unit->SetUnitVisibility(true);
 		}
 		else
 		{
-			Unit->SetActorHiddenInGame(true);
+			Unit->SetUnitVisibility(false);
 		}
 	}
 }

@@ -9,6 +9,7 @@ void ATopDownGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
+	// 서버 전용
 	if (HasAuthority())
 	{
 		AllPlayerController.Add(NewPlayer);
@@ -21,8 +22,8 @@ void ATopDownGameMode::PostLogin(APlayerController* NewPlayer)
 			return;
 		}
 
-		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Yellow, FString::FromInt(TopDownPC->GetGameInstance<UTopDownGameInstance>()->PlayerInfo.TeamId));
-		TopDownPC->Client_GetAllUnits();
+		// TopDownPC 초기화
+		TopDownPC->Client_InitializeTopDownPC();
 	}
 }
 
