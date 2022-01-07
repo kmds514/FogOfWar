@@ -52,7 +52,8 @@ public:
 
 	void UpdateFogTexture();
 
-	bool IsRevealed(const FIntPoint& Coords);
+	UFUNCTION(Category = "Fog Texture", BlueprintPure)
+	bool IsRevealed(const FIntPoint& Coords) const;
 
 	/** 업스케일 버퍼로 생성한 텍스처입니다. */
 	UPROPERTY(Category = "Fog Texture", BlueprintReadOnly, Transient)

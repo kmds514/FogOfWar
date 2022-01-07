@@ -25,12 +25,17 @@ protected:
 public:
 	virtual void Tick(float DeltaSeconds) override;
 
+	UFUNCTION(Category = "Fog Texture", BlueprintPure)
+	bool IsRevealed(const FIntPoint& Coords) const;
+
 	UFUNCTION(Category = "Fog Manager", BlueprintPure)
 	UTexture2D* GetFogTexture() const;
 
 protected:
 	void UpdateFog();
 	void UpdateFogTexture();
+
+	UFUNCTION(Category = "Fog Manager", BlueprintImplementableEvent)
 	void UpdateUnitVisibility();
 
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)

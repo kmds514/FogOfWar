@@ -66,11 +66,15 @@ void ATopDownHUD::EndDrawRect()
 		if (TopDownPlayerController->IsOwningUnit(Actor))
 		{
 			// 그 유닛을 선택합니다.
-			auto IUnit = Cast<ITopDownUnitInterface>(Actor);
+			if (Actor->GetClass()->ImplementsInterface(UTopDownUnitInterface::StaticClass()))
+			{
+				ITopDownUnitInterface::Execute_SetSelect(Actor, true);
+			}
+			/*auto IUnit = Cast<ITopDownUnitInterface>(Actor);
 			if (IUnit)
 			{
-				IUnit->SetSelect(true);
-			}
+				IUnit->Execute_SetSelect(IUnit, true);
+			}*/
 		}
 	}
 

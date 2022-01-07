@@ -25,12 +25,12 @@ FGenericTeamId ATopDownUnit::GetGenericTeamId() const
 	return (FGenericTeamId)TeamId;
 }
 
-void ATopDownUnit::SetSelect(bool NewSelect)
+void ATopDownUnit::SetSelect_Implementation(bool NewSelect)
 {
 	Selection->SetVisibility(NewSelect);
 }
 
-bool ATopDownUnit::IsFriendly() const
+bool ATopDownUnit::IsFriendly_Implementation() const
 {
 	// Get TopDownPC
 	auto TopDownPC = GetWorld()->GetFirstPlayerController<ATopDownPlayerController>();
@@ -44,7 +44,7 @@ bool ATopDownUnit::IsFriendly() const
 	return TopDownPC->TeamId == TeamId;
 }
 
-bool ATopDownUnit::IsHostile() const
+bool ATopDownUnit::IsHostile_Implementation() const
 {
 	// Get TopDownPC
 	auto TopDownPC = GetWorld()->GetFirstPlayerController<ATopDownPlayerController>();
@@ -62,6 +62,7 @@ void ATopDownUnit::NotifyActorOnClicked(FKey ButtonPressed)
 {
 	Super::NotifyActorOnClicked(ButtonPressed);
 
+	// 유닛을 마우스 왼쪽 버튼으로 클릭하면
 	if (ButtonPressed == EKeys::LeftMouseButton)
 	{
 		// Get TopDownPC
@@ -71,14 +72,15 @@ void ATopDownUnit::NotifyActorOnClicked(FKey ButtonPressed)
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString(__FUNCTION__) + TEXT(" - Invalid TopDownPC"));
 		}
 
-		// TopDownPC가 현재 선택 중인 유닛을 선택 해제합니다.
+		// TopDownPC가 현재 선택 중인 유닛을 선택해제합니다.
 		TopDownPC->ClearSelectedActors();
 		
-		if (IsHostile())
+		// TopDownPC와 같은 팀인지 확인합니다.
+		if (ITopDownUnitInterface::Execute_IsHostile(this))
 		{
 			Client_SelectUnit(FLinearColor::Red);
 		}
-		if (IsFriendly())
+		if (ITopDownUnitInterface::Execute_IsFriendly(this))
 		{
 			Client_SelectUnit(FLinearColor::Green);
 		}
@@ -91,7 +93,7 @@ void ATopDownUnit::NotifyActorOnClicked(FKey ButtonPressed)
 void ATopDownUnit::Client_SelectUnit_Implementation(const FLinearColor& Color)
 {
 	SelectionDMI->SetVectorParameterValue(TEXT("Color"), Color);
-	SetSelect(true);
+	ITopDownUnitInterface::Execute_SetSelect(this, true);
 }
 
 int ATopDownUnit::GetSight() const

@@ -353,7 +353,7 @@ FTexel2X2 FFogTexture::GetTexel2X2(int X, int Y)
 	return Texel;
 }
 
-bool FFogTexture::IsRevealed(const FIntPoint& Coords)
+bool FFogTexture::IsRevealed(const FIntPoint& Coords) const
 {
 	uint32 Index = Coords.Y * SourceWidth + Coords.X;
 	return SourceBuffer[Index] == 0xFF;

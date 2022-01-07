@@ -6,7 +6,6 @@
 
 #include "TopDown/TopDownPlayerController.h"
 #include "TopDown/TopDownUnit.h"
-#include "TopDown/TopDownGameState.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "Rendering/Texture2DResource.h"
@@ -60,6 +59,11 @@ void AFogManager::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 }
 
+bool AFogManager::IsRevealed(const FIntPoint& Coords) const
+{
+	return FogTexture->IsRevealed(Coords);
+}
+
 void AFogManager::UpdateFog()
 {
 	if (TopDownGrid == nullptr)
@@ -100,50 +104,50 @@ void AFogManager::UpdateFogTexture()
 	FogTexture->UpdateFogTexture();
 }
 
-void AFogManager::UpdateUnitVisibility()
-{
-	// Get TopDownGS
-	auto TopDownGS = Cast<ATopDownGameState>(UGameplayStatics::GetGameState(GetWorld()));
-	if (TopDownGS == nullptr)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, TEXT("Invalid TopDownGS"));
-		return;
-	}
-
-	// Get TopDownPC
-	auto TopDownPC = Cast<ATopDownPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	if (TopDownPC == nullptr)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, TEXT("Invalid TopDownPC"));
-		return;
-	}
-
-	// 모든 TopDownUnit 순회
-	for (auto Unit : TopDownGS->AllUnits)
-	{
-		if (Unit == nullptr)
-		{
-			continue;
-		}
-
-		// PC와 같은 팀 유닛이면 가시성 검사 안함
-		if (Unit->GetGenericTeamId() == TopDownPC->TeamId)
-		{
-			continue;
-		}
-
-		// 다른 팀 유닛이면 그 유닛의 그리드 좌표를 확인하여 유닛의 가시성 결정
-		const FIntPoint& UnitCoords = TopDownGrid->WorldToGrid(Unit->GetActorLocation());
-		if (FogTexture->IsRevealed(UnitCoords))
-		{
-			//TopDownGS->Client_SetUnitHiddenInGame(Unit, false);
-		}
-		else
-		{
-			//TopDownGS->Client_SetUnitHiddenInGame(Unit, false);
-		}
-	}
-}
+//void AFogManager::UpdateUnitVisibility()
+//{
+//	// Get TopDownGS
+//	auto TopDownGS = Cast<ATopDownGameState>(UGameplayStatics::GetGameState(GetWorld()));
+//	if (TopDownGS == nullptr)
+//	{
+//		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, TEXT("Invalid TopDownGS"));
+//		return;
+//	}
+//
+//	// Get TopDownPC
+//	auto TopDownPC = Cast<ATopDownPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+//	if (TopDownPC == nullptr)
+//	{
+//		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, TEXT("Invalid TopDownPC"));
+//		return;
+//	}
+//
+//	// 모든 TopDownUnit 순회
+//	for (auto Unit : TopDownGS->AllUnits)
+//	{
+//		if (Unit == nullptr)
+//		{
+//			continue;
+//		}
+//
+//		// PC와 같은 팀 유닛이면 가시성 검사 안함
+//		if (Unit->GetGenericTeamId() == TopDownPC->TeamId)
+//		{
+//			continue;
+//		}
+//
+//		// 다른 팀 유닛이면 그 유닛의 그리드 좌표를 확인하여 유닛의 가시성 결정
+//		const FIntPoint& UnitCoords = TopDownGrid->WorldToGrid(Unit->GetActorLocation());
+//		if (FogTexture->IsRevealed(UnitCoords))
+//		{
+//			//TopDownGS->Client_SetUnitHiddenInGame(Unit, false);
+//		}
+//		else
+//		{
+//			//TopDownGS->Client_SetUnitHiddenInGame(Unit, false);
+//		}
+//	}
+//}
 
 UTexture2D* AFogManager::GetFogTexture() const
 {

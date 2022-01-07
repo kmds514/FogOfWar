@@ -7,7 +7,7 @@
 #include "TopDownUnitInterface.generated.h"
 
 // This class does not need to be modified.
-UINTERFACE(MinimalAPI)
+UINTERFACE(MinimalAPI, Blueprintable)
 class UTopDownUnitInterface : public UInterface
 {
 	GENERATED_BODY()
@@ -22,7 +22,13 @@ class FOGOFWAR_API ITopDownUnitInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual void SetSelect(bool NewSelect) = 0;
-	virtual bool IsFriendly() const = 0;
-	virtual bool IsHostile() const = 0;
+	UFUNCTION(Category = "Top Down Unit Interface", BlueprintCallable, BlueprintNativeEvent)
+	void SetSelect(bool NewSelect);
+	virtual void SetSelect_Implementation(bool NewSelect);
+	UFUNCTION(Category = "Top Down Unit Interface", BlueprintCallable, BlueprintNativeEvent)
+	bool IsFriendly() const;
+	virtual bool IsFriendly_Implementation() const;
+	UFUNCTION(Category = "Top Down Unit Interface", BlueprintCallable, BlueprintNativeEvent)
+	bool IsHostile() const;
+	virtual bool IsHostile_Implementation() const;
 };

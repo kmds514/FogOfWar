@@ -43,13 +43,13 @@ public:
 	UFUNCTION(Category = "Top Down Player Controller", BlueprintPure)
 	bool IsOwningUnit(AActor* const Unit) const;
 
-	UPROPERTY(Category = "Top Down Game State", BlueprintReadOnly)
+	UPROPERTY(Category = "Top Down Player Controller", BlueprintReadOnly)
 	TArray<ATopDownUnit*> OwningUnits;
 
 	UPROPERTY(Category = "Top Down Player Controller", VisibleAnywhere, BlueprintReadWrite)
 	uint8 TeamId = 0;
 
-	UPROPERTY()
+	UPROPERTY(Category = "Top Down Player Controller", BlueprintReadOnly)
 	TArray<AActor*> SelectedActors;
 
 private:

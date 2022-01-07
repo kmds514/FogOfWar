@@ -18,9 +18,9 @@ public:
 
 	virtual FGenericTeamId GetGenericTeamId() const override;
 
-	virtual void SetSelect(bool NewSelect) override;
-	virtual bool IsFriendly() const override;
-	virtual bool IsHostile() const override;
+	virtual void SetSelect_Implementation(bool NewSelect) override;
+	virtual bool IsFriendly_Implementation() const override;
+	virtual bool IsHostile_Implementation() const override;
 
 	virtual void NotifyActorOnClicked(FKey ButtonPressed = EKeys::LeftMouseButton) override;
 
