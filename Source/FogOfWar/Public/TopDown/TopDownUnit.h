@@ -18,15 +18,8 @@ public:
 
 	virtual FGenericTeamId GetGenericTeamId() const override;
 
-	virtual void SetSelect_Implementation(bool NewSelect) override;
 	virtual bool IsFriendly_Implementation() const override;
 	virtual bool IsHostile_Implementation() const override;
-
-	virtual void NotifyActorOnClicked(FKey ButtonPressed = EKeys::LeftMouseButton) override;
-
-	UFUNCTION(Client, Reliable)
-	void Client_SelectUnit(const FLinearColor& Color);
-	void Client_SelectUnit_Implementation(const FLinearColor& Color);
 
 	int GetSight() const;
 
@@ -37,10 +30,4 @@ private:
 	/** In centimeters */
 	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true", ClampMin = "100", ClampMax = "2000", UIMin = "100", UIMax = "2000"))
 	int Sight = 800;
-
-	UPROPERTY(Category = "Top Down Unit", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UDecalComponent* Selection = nullptr;
-
-	UPROPERTY(Category = "Top Down Unit", VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	class UMaterialInstanceDynamic* SelectionDMI = nullptr;
 };

@@ -29,6 +29,7 @@ public:
 	void OnLeftMouseButtonPressed();
 	void OnLeftMouseButtonReleased();
 
+	UFUNCTION(Category = "Top Down Player Controller", BlueprintCallable)
 	void ClearSelectedActors();
 
 	UFUNCTION(Category = "Top Down Player Controller", BlueprintCallable)
