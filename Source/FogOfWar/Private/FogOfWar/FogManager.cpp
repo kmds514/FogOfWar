@@ -80,12 +80,12 @@ void AFogManager::UpdateFog()
 void AFogManager::UpdateFogTexture()
 {
 	FogTexture->UpdateExploredFog();
-
+	
 	// Get TopDownPC
 	auto TopDownPC = Cast<ATopDownPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 	if (TopDownPC == nullptr)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, TEXT("Invalid TopDownPC"));
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString(__FUNCTION__) + TEXT(": Invalid TopDownPC"));
 		return;
 	}
 
@@ -110,34 +110,22 @@ void AFogManager::Client_UpdateUnitVisibility_Implementation()
 	auto TopDownPC = Cast<ATopDownPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 	if (TopDownPC == nullptr)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, TEXT("Invalid TopDownPC"));
-		return;
-	}
-
-	// Get TopDownGS
-	auto TopDownGS = TopDownPC->GetTopDownGS();
-	if (TopDownGS == nullptr)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, TEXT("Invalid TopDownGS"));
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString(__FUNCTION__) + TEXT(": Invalid TopDownPC"));
 		return;
 	}
 	
-	// 모든 유닛들 중에서
-	for (auto Unit : TopDownGS->AllUnits)
+	// TopDownPC가 소유한 유닛 중에서
+	for (auto Unit : TopDownPC->OtherUnits)
 	{
-		// TopDownPC가 소유한 유닛이 아니라면
-		if (Unit && TopDownPC->IsOwningUnit(Unit) == false)
+		// 그 유닛이 있는 곳의 안개 상태를 확인하고 유닛의 가시성을 결정합니다.
+		auto Coords = TopDownGrid->WorldToGrid(Unit->GetActorLocation());
+		if (FogTexture->IsRevealed(Coords))
 		{
-			// 그 유닛이 있는 곳의 안개 상태를 확인하고 유닛의 가시성을 결정합니다.
-			auto Coords = TopDownGrid->WorldToGrid(Unit->GetActorLocation());
-			if (FogTexture->IsRevealed(Coords))
-			{
-				Unit->SetActorHiddenInGame(false);
-			}
-			else
-			{
-				Unit->SetActorHiddenInGame(true);
-			}
+			Unit->SetActorHiddenInGame(false);
+		}
+		else
+		{
+			Unit->SetActorHiddenInGame(true);
 		}
 	}
 }
