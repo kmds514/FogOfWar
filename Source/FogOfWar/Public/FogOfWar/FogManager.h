@@ -47,7 +47,7 @@ protected:
 	uint8 FogUpdateInterval = 10;
 
 	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "5", ClampMax = "30", UIMin = "5", UIMax = "30"))
-	uint8 FogInterpSpeed = 15;
+	uint8 FogInterpSpeed = 20;
 
 	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0.001", ClampMax = "0.05", UIMin = "0.001", UIMax = "0.05"))
 	float FogBlurDistance = 0.02f;
