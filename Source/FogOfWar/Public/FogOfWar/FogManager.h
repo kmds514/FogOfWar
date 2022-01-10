@@ -7,7 +7,6 @@
 #include "TopDown/TopDownGrid.h"
 #include "FogManager.generated.h"
 
-class UFogAgentComponent;
 class FFogTexture;
 
 UCLASS()
