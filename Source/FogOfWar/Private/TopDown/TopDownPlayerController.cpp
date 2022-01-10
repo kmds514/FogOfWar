@@ -16,7 +16,7 @@ void ATopDownPlayerController::BeginPlay()
 
 	FInputModeGameAndUI InputMode = {};
 	InputMode.SetHideCursorDuringCapture(false);
-	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+	//InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	SetInputMode(InputMode);
 }
 
