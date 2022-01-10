@@ -23,8 +23,6 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
-	virtual void Tick(float DeltaSeconds) override;
-
 	UFUNCTION(Category = "Fog Texture", BlueprintPure)
 	bool IsRevealed(const FIntPoint& Coords) const;
 
@@ -41,6 +39,9 @@ protected:
 
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	class ATopDownGrid* TopDownGrid = nullptr;
+
+	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadOnly)
+	bool bDisableFogUpdate = false;
 
 	/** Number of fog updates per second */
 	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "1", ClampMax ="60", UIMin = "1", UIMax = "60"))

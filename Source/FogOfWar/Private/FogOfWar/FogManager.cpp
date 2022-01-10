@@ -52,11 +52,6 @@ void AFogManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-void AFogManager::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-}
-
 bool AFogManager::IsRevealed(const FIntPoint& Coords) const
 {
 	return FogTexture->IsRevealed(Coords);
@@ -65,6 +60,11 @@ bool AFogManager::IsRevealed(const FIntPoint& Coords) const
 void AFogManager::UpdateFog()
 {
 	if (TopDownGrid == nullptr)
+	{
+		return;
+	}
+
+	if (bDisableFogUpdate)
 	{
 		return;
 	}
