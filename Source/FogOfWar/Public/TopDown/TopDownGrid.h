@@ -46,7 +46,7 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	/** @return Returns grid coords index */
+	/** @return 월드 좌표를 그리드 좌표로 변환합니다. */
 	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
 	FIntPoint WorldToGrid(const FVector& WorldLocation) const;
 	
@@ -58,23 +58,26 @@ public:
 
 	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
 	int GetGridVolumeExtentXY() const;
+
 	UFUNCTION(Category = "Top Down Grid", BlueprintPure)
 	int GetGridVolumeExtentZ() const;
 
-	/** @return Returns world value to grid value */
+	/** @return 월드 단위를 그리드 단위로 변환합니다. */
 	int ToGridUnit(const int N) const;
 
 	UPROPERTY(Category = "Top Down Grid", BlueprintReadOnly)
 	TMap<FIntPoint, FTile> TileData;
 
+	/** Center 타일과 Target 타일의 높이를 비교하는 콜백 함수 */
 	TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked;
 
 private:
 	void UpdateGridTransform();
 
-	/** @return returns blocking hit */
+	/** @return Returns blocking hit */
 	bool CoordsLineTraceToMinusZAxis(const FIntPoint& Coords, ETraceTypeQuery TraceChannel, FHitResult& OutHit);
 
+	/** 타일 맵 생성 */
 	void GenerateTileData();
 
 	void DrawDebugGrid();
@@ -85,7 +88,7 @@ private:
 	UPROPERTY(Category = "Config", EditAnywhere)
 	float DebugGridTime = 10.0f;
 
-	/** Number of tiles and Number of fog texel. 
+	/** 그리드 너비에 들어가는 타일 개수 & 안개 텍스처 너비의 텍셀 개수
 	* Tile extent = GridVolumeExtentXY / GridResoulution */
 	UPROPERTY(Category = "Config", EditAnywhere, meta = (ClampMin = 16, ClampMax = 512, UIMin = 16, UIMax = 512))
 	int GridResolution = 256;
@@ -102,10 +105,12 @@ private:
 	UPROPERTY(Category = "Top Down Grid", VisibleDefaultsOnly)
 	class UBoxComponent* GridVolume = nullptr;
 
+	/** 그리드 좌표의 트랜스폼. GridVolume을 기준으로 스케일을 조정 */
 	FTransform GridTransform;
 	
 	/** 그리드 좌표의 최솟값을 (0, 0)으로 하기 위한 조정값 */
 	int GridShift = GridResolution / 2;
 
+	/** 타일의 반 너비. 50이면 한 변의 길이가 100인 타일 */
 	FVector TileExtent;
 };

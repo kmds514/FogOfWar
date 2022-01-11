@@ -78,6 +78,7 @@ void AFogManager::UpdateFog()
 
 void AFogManager::UpdateFogTexture()
 {
+	// 한 번이라도 탐사한 타일이 있는지 업데이트
 	FogTexture->UpdateExploredFog();
 	
 	// Get TopDownPC
@@ -95,11 +96,16 @@ void AFogManager::UpdateFogTexture()
 		{
 			continue;
 		}
+		// 유닛의 위치를 그리드 좌표로 변환
 		const FIntPoint& UnitCoords = TopDownGrid->WorldToGrid(Unit->GetActorLocation());
+
+		// Get unit sight
 		const int UnitSight = TopDownGrid->ToGridUnit(Unit->GetSight());
+
+		// 유닛을 기준으로 안개 텍스처 버퍼 업데이트
 		FogTexture->UpdateFogBuffer(UnitCoords, UnitSight, TopDownGrid->IsBlocked);
 	}
-
+	// 버퍼로 텍스처 업데이트
 	FogTexture->UpdateFogTexture();
 }
 

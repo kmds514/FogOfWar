@@ -36,6 +36,7 @@ class FOGOFWAR_API FFogTexture
 		int8 XX, XY, YX, YY;
 	};
 
+	static constexpr uint8 RevealedFogColor = 0xFF;
 	static constexpr uint8 ExploredFogColor = 0x20;
 
 public:
@@ -52,29 +53,29 @@ public:
 
 	void UpdateFogTexture();
 
+	/** @return 타일이 Revealed 상태인지 알려줍니다. */
 	UFUNCTION(Category = "Fog Texture", BlueprintPure)
 	bool IsRevealed(const FIntPoint& Coords) const;
 
-	/** 업스케일 버퍼로 생성한 텍스처입니다. */
+	/** 업스케일 버퍼로 만든 Texture2D */
 	UPROPERTY(Category = "Fog Texture", BlueprintReadOnly, Transient)
 	class UTexture2D* FogTexture = nullptr;
 
 private:
-	/** https://technology.riotgames.com/sites/default/files/fow_diagram.png */
+	/** https://technology.riotgames.com/news/story-fog-and-war */
 	void GenerateUpscaleMap();
-
 	void UpdateUpscaleBuffer();
 
-	/** https://en.wikipedia.org/wiki/Midpoint_circle_algorithm */
+	// Ray casting: 중심에서 원 둘레에 해당하는 타일까지 직선을 그려 장애물을 검사하는 방식
+	/** 브레젠험 원 알고리즘으로 원 둘에에 해당하는 타일을 구하는 함수
+	* https://en.wikipedia.org/wiki/Midpoint_circle_algorithm */
 	void DrawRayCastingFog(const FIntPoint& Center, int Radius, TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked);
-	/** https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm */
+	/** 브레젠험 선 알고리즘으로 직선상의 장애물 검사
+	* https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm */
 	void CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End, TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked);
 
-	/*
-	* http://www.roguebasin.com/index.php?title=Improved_Shadowcasting_in_Java
-	* https://www.albertford.com/shadowcasting/
-	* https://m.blog.naver.com/dunkydonk/220214116723
-	*/
+	// Shadow casting
+	/** http://roguebasin.com/index.php/Shadow_casting */
 	void DrawShadowCastingFog(const FIntPoint& Center, int Radius, int Row, float Start, float End, const FOctantTransform& T, TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked);
 
 	/** Target이 Center를 중심으로 하는 원 안에 있는지 확인합니다. */

@@ -32,13 +32,13 @@ protected:
 	float MinDistance = 800.0f;
 
 	UPROPERTY(Category = "Top Down Camera", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "2000.0", ClampMax = "5000.0", UIMin = "2000.0", UIMax = "5000.0"))
-	float MaxDistance = 3800.0f;
+	float MaxDistance = 3000.0f;
 
-	UPROPERTY(Category = "Top Down Camera", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "30.0", ClampMax = "60.0", UIMin = "30.0", UIMax = "65.0"))
-	float MinFOV = 40.0;
+	UPROPERTY(Category = "Top Down Camera", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "30.0", ClampMax = "55.0", UIMin = "30.0", UIMax = "55.0"))
+	float MinFOV = 45.0;
 
-	UPROPERTY(Category = "Top Down Camera", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "60.0", ClampMax = "90.0", UIMin = "60.0", UIMax = "90.0"))
-	float MaxFOV = 60.0f;
+	UPROPERTY(Category = "Top Down Camera", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "55.0", ClampMax = "90.0", UIMin = "55.0", UIMax = "90.0"))
+	float MaxFOV = 55.0f;
 
 	UPROPERTY(Category = "Top Down Camera", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "15.0", ClampMax = "60.0", UIMin = "15.0", UIMax = "60.0"))
 	float MinPitch = 60.0f;
@@ -53,10 +53,10 @@ protected:
 	float MaxSpeed = 3000.0f;
 
 	UPROPERTY(Category = "Top Down Camera", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "0.0", ClampMax = "20.0", UIMin = "0.0", UIMax = "20.0"))
-	float InterpSpeed = 10.0f;
+	float InterpSpeed = 8.0f;
 
 	UPROPERTY(Category = "Top Down Camera", EditDefaultsOnly, BlueprintReadWrite, meta = (ClampMin = "2", ClampMax = "16", UIMin = "2", UIMax = "16"))
-	int NumberOfZoomLevel = 5;
+	int NumberOfZoomLevel = 4;
 
 private:
 	UPROPERTY(Category = "Top Down Camera", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))

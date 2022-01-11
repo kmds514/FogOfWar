@@ -13,10 +13,8 @@
 #define ECC_High ECC_GameTraceChannel5
 #define ECC_Highest ECC_GameTraceChannel6
 
-// Sets default values
 ATopDownGrid::ATopDownGrid()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	Billboard = CreateDefaultSubobject<UBillboardComponent>(TEXT("Billboard"));
@@ -26,8 +24,10 @@ ATopDownGrid::ATopDownGrid()
 	GridVolume->SetupAttachment(Billboard);
 	GridVolume->SetBoxExtent(FVector(GridVolumeExtentXY, GridVolumeExtentXY, GridVolumeExtentZ));
 
+	// TMap 크기 예약
 	TileData.Reserve(GridResolution * GridResolution);
 
+	// 콜백 함수 정의
 	IsBlocked = [&](const FIntPoint& Center, const FIntPoint& Target)
 	{
 		auto C = TileData.Find(Center);
@@ -120,6 +120,7 @@ bool ATopDownGrid::CoordsLineTraceToMinusZAxis(const FIntPoint& Coords, ETraceTy
 
 void ATopDownGrid::GenerateTileData()
 {
+	// Empty map but preserve allocation and capacity
 	TileData.Reset();
 
 	for (int i = 0; i < GridResolution; i++)

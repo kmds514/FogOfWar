@@ -105,37 +105,44 @@ void FFogTexture::UpdateExploredFog()
 
 void FFogTexture::UpdateFogBuffer(const FIntPoint& Center, int Radius, TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked)
 {
-	// Ray casting
-	//DrawRayCastingFog(Center, Radius, IsBlocked);
+	// Ray casting 
+	//DrawRayCastingFog(Center, Radius, IsBlocked); // Deprecated
 
 	// Shadow casting
+	// 자신의 위치(Center)는 항상 Reveal
 	SourceBuffer[Center.Y * SourceWidth + Center.X] = 0xFF;
+
+	// 평면을 8분면으로 나눠서 계산
 	for (int i = 0; i < 8; ++i)
 	{
 		DrawShadowCastingFog(Center, Radius, 1, 1.0f, 0.0f, OctantTransforms[i], IsBlocked);
 	}
 
-	// Upscale buffer
+	// 버퍼 해상도 업스케일
 	UpdateUpscaleBuffer();
 }
 
 void FFogTexture::UpdateFogTexture()
 {
+	// Texture2D를 주기적으로 업데이트하려면 아래와 같이 작성해야 함
+
 	FUpdateTextureContext* UpdateTextureContext = new FUpdateTextureContext();
 	UpdateTextureContext->TextureResource = (FTexture2DResource*)FogTexture->Resource;
 	UpdateTextureContext->MipIndex = UpdateTextureContext->TextureResource->GetCurrentFirstMip();
 	UpdateTextureContext->UpdateRegion = &UpscaleUpdateRegion;
 	UpdateTextureContext->SourcePitch = UpscaleUpdateRegion.Width;
+
+	// UpscaleBuffer를 UpdateTextureContext->SourceData에 복사
 	UpdateTextureContext->SourceData = new uint8[UpscaleBufferSize];
 	FMemory::Memcpy(UpdateTextureContext->SourceData, UpscaleBuffer, UpscaleBufferSize);
 
 	ENQUEUE_RENDER_COMMAND(UpdateTexture)([UpdateTextureContext](FRHICommandListImmediate& RHICmdList)
 		{
-			RHIUpdateTexture2D(UpdateTextureContext->TextureResource->GetTexture2DRHI(),
-				UpdateTextureContext->MipIndex,
-				*UpdateTextureContext->UpdateRegion,
-				UpdateTextureContext->SourcePitch,
-				UpdateTextureContext->SourceData);
+			RHIUpdateTexture2D(UpdateTextureContext->TextureResource->GetTexture2DRHI(), // Texture
+								UpdateTextureContext->MipIndex,	// Mip Index
+								*UpdateTextureContext->UpdateRegion, // Update Region
+								UpdateTextureContext->SourcePitch, // Texture Width
+								UpdateTextureContext->SourceData); // Source Data
 
 			delete[] UpdateTextureContext->SourceData;
 			delete UpdateTextureContext;
@@ -268,13 +275,13 @@ void FFogTexture::DrawShadowCastingFog(const FIntPoint& Center, int Radius, int 
 				break;
 			}
 
-			// Check if it's within the lightable area
+			// 시야 안에 있는 타일인지 확인
 			if (IsInRadius(Center, { CurrentX, CurrentY }, Radius))
 			{
 				SourceBuffer[CurrentY * SourceWidth + CurrentX] = 0xFF;
 			}
 
-			// Previous cell was a blocking one
+			// 이전 타일이 막혀있다면
 			if (bBlocked)
 			{
 				if (IsBlocked(Center, { CurrentX, CurrentY }))
