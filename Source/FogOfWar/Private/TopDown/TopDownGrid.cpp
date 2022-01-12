@@ -123,6 +123,7 @@ void ATopDownGrid::GenerateTileData()
 	// Empty map but preserve allocation and capacity
 	TileData.Reset();
 
+	// 라인 트레이스 충돌 지점으로 높이 값을 분류하며 그리드 맵 생성
 	for (int i = 0; i < GridResolution; i++)
 	{
 		for (int j = 0; j < GridResolution; j++)
