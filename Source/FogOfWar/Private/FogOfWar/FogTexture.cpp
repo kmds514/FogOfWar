@@ -199,7 +199,7 @@ void FFogTexture::CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 
 	if (DeltaY < DeltaX)
 	{
-		int D = 2 * (DeltaY - DeltaX);
+		int D = 2 * (DeltaY - DeltaX); // Discriminant
 
 		for (; (Start.X < End.X ? X < End.X : X > End.X); X += XIncreasement)
 		{
@@ -222,7 +222,7 @@ void FFogTexture::CastBresenhamLine(const FIntPoint& Start, const FIntPoint& End
 	}
 	else
 	{
-		int D = 2 * (DeltaX - DeltaY);
+		int D = 2 * (DeltaX - DeltaY); // Discriminant
 
 		for (; (Start.Y < End.Y ? Y < End.Y : Y > End.Y); Y += YIncreasement)
 		{
@@ -322,13 +322,15 @@ void FFogTexture::UpdateUpscaleBuffer()
 	{
 		for (int j = 0; j < SourceHeight; ++j)
 		{
-			Texel2X2 = GetTexel2X2(i, j);
-			Texel4X4 = UpscaleMap.Find(Texel2X2);
+			// 2x2 텍셀을 가져와서
+			Texel2X2 = GetTexel2X2(i, j); 
+
+			// 4x4 텍셀에 맵핑
+			Texel4X4 = UpscaleMap.Find(Texel2X2); 
 			if (Texel4X4 == nullptr)
 			{
 				continue;
 			}
-
 			for (int Row = 0; Row < 4; ++Row)
 			{
 				int Index = (Row + j * 4) * UpscaleWidth + i * 4;
@@ -337,6 +339,7 @@ void FFogTexture::UpdateUpscaleBuffer()
 		}
 	}
 
+	// 한 번이라도 탐사한 타일이 있는지 확인
 	for (uint32 i = 0; i < UpscaleBufferSize; ++i)
 	{
 		if (ExploredBuffer[i] == ExploredFogColor && UpscaleBuffer[i] == 0)

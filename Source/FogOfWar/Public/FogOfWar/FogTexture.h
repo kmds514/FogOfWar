@@ -67,7 +67,7 @@ private:
 	void UpdateUpscaleBuffer();
 
 	// Ray casting: 중심에서 원 둘레에 해당하는 타일까지 직선을 그려 장애물을 검사하는 방식
-	/** 브레젠험 원 알고리즘으로 원 둘에에 해당하는 타일을 구하는 함수
+	/** 브레젠험 원 알고리즘으로 원 둘레에 해당하는 타일을 구하는 함수
 	* https://en.wikipedia.org/wiki/Midpoint_circle_algorithm */
 	void DrawRayCastingFog(const FIntPoint& Center, int Radius, TFunction<bool(const FIntPoint&, const FIntPoint&)> IsBlocked);
 	/** 브레젠험 선 알고리즘으로 직선상의 장애물 검사
