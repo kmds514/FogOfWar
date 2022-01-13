@@ -23,6 +23,7 @@ void AFogManager::BeginPlay()
 		return;
 	}
 
+	// Get TopDownGrid
 	TArray<AActor*> OutActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATopDownGrid::StaticClass(), OutActors);
 	if (OutActors.Num() == 1)
@@ -36,35 +37,30 @@ void AFogManager::BeginPlay()
 		UE_LOG(LogTemp, Error, TEXT("%s: TopDownGrid must exist only one instance in world. Current instance is %d "), *Name, OutActors.Num());
 		return;
 	}
+
+	// Get grid resoultion
 	GridResolution = TopDownGrid->GetGridResolution();
 
+	// Initialize FogTexture class
 	FogTexture = new FFogTexture();
 	FogTexture->InitFogTexture(GridResolution);
 
+	// Set fog update timer
 	GetWorldTimerManager().SetTimer(FogUpdateTimer, this, &AFogManager::UpdateFog, 1.0f / static_cast<float>(FogUpdateInterval), true, 0.5f);
 }
 
 void AFogManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	// Release FogTexture class
 	FogTexture->ReleaseFogTexture();
 	delete FogTexture;
 
 	Super::EndPlay(EndPlayReason);
 }
 
-bool AFogManager::IsRevealed(const FIntPoint& Coords) const
-{
-	return FogTexture->IsRevealed(Coords);
-}
-
 void AFogManager::UpdateFog()
 {
 	if (TopDownGrid == nullptr)
-	{
-		return;
-	}
-
-	if (bDisableFogUpdate)
 	{
 		return;
 	}

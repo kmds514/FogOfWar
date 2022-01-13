@@ -22,9 +22,6 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
-	UFUNCTION(Category = "Fog Texture", BlueprintPure)
-	bool IsRevealed(const FIntPoint& Coords) const;
-
 	UFUNCTION(Category = "Fog Manager", BlueprintPure)
 	UTexture2D* GetFogTexture() const;
 
@@ -39,9 +36,6 @@ protected:
 	UPROPERTY(Category = "Fog Manager", BlueprintReadOnly)
 	class ATopDownGrid* TopDownGrid = nullptr;
 
-	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadOnly)
-	bool bDisableFogUpdate = false;
-
 	/** Number of fog updates per second */
 	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "1", ClampMax ="60", UIMin = "1", UIMax = "60"))
 	uint8 FogUpdateInterval = 10;
@@ -52,6 +46,7 @@ protected:
 	UPROPERTY(Category = "Config", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0.001", ClampMax = "0.05", UIMin = "0.001", UIMax = "0.05"))
 	float FogBlurDistance = 0.02f;
 
+	/** 그리드의 각 축에 있는 타일 개수 & 안개 텍스처 해상도 */
 	uint32 GridResolution = 0;
 
 	FTimerHandle FogUpdateTimer;
